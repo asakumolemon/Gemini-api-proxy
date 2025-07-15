@@ -112,9 +112,41 @@ def update_cleanup_config(config_data):
     return call_api('/admin/cleanup/config', 'POST', config_data)
 
 
+def get_stream_config():
+    """获取流式配置"""
+    return call_api('/admin/config/stream')
+
+
+def update_stream_config(config_data):
+    """更新流式配置"""
+    return call_api('/admin/config/stream', 'POST', config_data)
+
+
+@st.cache_data(ttl=30)
+def get_cached_stream_config():
+    """获取缓存的流式配置"""
+    return get_stream_config()
+
+
 def manual_cleanup():
     """手动执行清理"""
     return call_api('/admin/cleanup/manual', 'POST')
+
+
+# --- 故障转移配置函数 ---
+def get_failover_config():
+    """获取故障转移配置"""
+    return call_api('/admin/config/failover')
+
+
+def update_failover_config(config_data):
+    """更新故障转移配置"""
+    return call_api('/admin/config/failover', 'POST', config_data)
+
+
+def get_failover_stats():
+    """获取故障转移统计信息"""
+    return call_api('/admin/failover/stats')
 
 
 # --- 缓存函数 ---
@@ -158,6 +190,18 @@ def get_cached_health_summary():
 def get_cached_cleanup_status():
     """获取缓存的自动清理状态"""
     return get_cleanup_status()
+
+
+@st.cache_data(ttl=30)
+def get_cached_failover_config():
+    """获取缓存的故障转移配置"""
+    return get_failover_config()
+
+
+@st.cache_data(ttl=60)
+def get_cached_failover_stats():
+    """获取缓存的故障转移统计"""
+    return get_failover_stats()
 
 
 # --- 移动端检测和手势控制函数 ---
@@ -2323,7 +2367,7 @@ with st.sidebar:
     <div class="sidebar-footer">
         <div class="sidebar-footer-content">
             <div class="sidebar-footer-item">
-                <span>版本 v1.2.0</span>
+                <span>版本 v1.3.0</span>
             </div>
             <div class="sidebar-footer-item">
                 <a href="{API_BASE_URL}/docs" target="_blank" class="sidebar-footer-link">API 文档</a>
@@ -2930,8 +2974,8 @@ elif page == "系统设置":
         st.error("无法获取配置数据")
         st.stop()
 
-    # 包含自动清理功能的标签页
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["思考模式", "提示词注入", "负载均衡", "自动清理", "系统信息"])
+    # 包含故障转移配置的标签页
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["思考模式", "提示词注入", "流式配置", "故障转移", "负载均衡", "自动清理", "系统信息"])
 
     with tab1:
         st.markdown("#### 思考模式配置")
@@ -3033,6 +3077,352 @@ elif page == "系统设置":
                     st.rerun()
 
     with tab3:
+        st.markdown("#### 🌊 流式响应配置")
+        st.markdown("配置API响应的流式处理逻辑")
+
+        # 获取当前流式配置
+        stream_config_data = get_cached_stream_config()
+        
+        if not stream_config_data or not stream_config_data.get('success'):
+            st.error("❌ 无法获取流式配置")
+        else:
+            current_mode = stream_config_data.get('stream_mode', 'auto')
+            available_modes = stream_config_data.get('available_modes', [])
+            
+            # 状态显示
+            mode_info = {
+                'auto': {'icon': '🔄', 'color': '#3b82f6', 'desc': '根据用户请求决定'},
+                'force_stream': {'icon': '🌊', 'color': '#10b981', 'desc': '所有响应都使用流式'},
+                'force_non_stream': {'icon': '📄', 'color': '#f59e0b', 'desc': '所有响应都使用非流式'}
+            }
+            
+            current_info = mode_info.get(current_mode, mode_info['auto'])
+            
+            st.markdown(f'''
+            <div class="status-card-style" style="margin-bottom: 1.5rem; padding: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 1.5rem;">{current_info['icon']}</span>
+                    <div>
+                        <div style="font-weight: 600; color: #374151; font-size: 1.1rem;">当前流式模式</div>
+                        <div style="color: {current_info['color']}; font-weight: 500; margin-top: 0.25rem;">
+                            {next((mode['label'] for mode in available_modes if mode['value'] == current_mode), '自动模式')}
+                        </div>
+                        <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">
+                            {current_info['desc']}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # 配置表单
+            with st.form("stream_config_form"):
+                st.markdown("**选择流式响应模式**")
+                
+                # 创建模式选项的映射
+                mode_options = {mode['value']: mode['label'] for mode in available_modes}
+                
+                selected_mode = st.selectbox(
+                    "流式模式",
+                    options=list(mode_options.keys()),
+                    format_func=lambda x: mode_options[x],
+                    index=list(mode_options.keys()).index(current_mode) if current_mode in mode_options else 0,
+                    help="选择API响应的流式处理策略"
+                )
+                
+                # 模式说明
+                st.markdown("**模式说明：**")
+                st.markdown("""
+                - **自动模式**：根据客户端请求中的 `stream` 参数决定是否使用流式响应
+                - **强制流式**：无论客户端请求如何，都返回流式响应
+                - **强制非流式**：无论客户端请求如何，都返回完整的非流式响应
+                """)
+                
+                if st.form_submit_button("保存配置", type="primary", use_container_width=True):
+                    update_data = {
+                        "mode": selected_mode
+                    }
+                    
+                    result = update_stream_config(update_data)
+                    if result and result.get('success'):
+                        st.success("流式配置已保存")
+                        st.cache_data.clear()
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("保存失败，请重试")
+
+    with tab4:  # 故障转移配置标签页
+        st.markdown("#### ⚡ 快速故障转移配置")
+        st.markdown("配置智能故障转移策略，优化请求处理和错误恢复机制")
+
+        # 获取当前配置
+        failover_config_data = get_cached_failover_config()
+        failover_stats_data = get_cached_failover_stats()
+
+        if not failover_config_data or not failover_config_data.get('success'):
+            st.error("❌ 无法获取故障转移配置")
+        else:
+            current_config = failover_config_data.get('config', {})
+            stats_info = failover_config_data.get('stats', {})
+
+            # === 顶部状态概览 ===
+            st.markdown("##### 📊 故障转移状态")
+
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                # 快速故障转移状态
+                fast_enabled = current_config.get('fast_failover_enabled', True)
+                status_color = "#10b981" if fast_enabled else "#ef4444"
+                status_text = "快速模式" if fast_enabled else "传统模式"
+                status_icon = "⚡" if fast_enabled else "🐢"
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">{status_icon}</span>
+                        <span style="font-weight: 600; color: #374151;">故障转移</span>
+                    </div>
+                    <div style="color: {status_color}; font-weight: 500; font-size: 1rem; text-align: center;">
+                        {status_text}
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            with col2:
+                # 最大尝试次数
+                max_attempts = current_config.get('max_key_attempts', 5)
+                available_keys = stats_info.get('available_keys', 0)
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-weight: 600; color: #374151;">
+                        尝试次数
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: #6366f1; font-weight: 500; font-size: 1.1rem;">
+                            最多 {max_attempts} 次
+                        </div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">
+                            可用 {available_keys} 个Key
+                        </div>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            with col3:
+                # 健康Key数量
+                healthy_keys = stats_info.get('healthy_keys', 0)
+                health_color = "#10b981" if healthy_keys > 0 else "#ef4444"
+                health_icon = "💚" if healthy_keys > 0 else "❤️"
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">{health_icon}</span>
+                        <span style="font-weight: 600; color: #374151;">健康Keys</span>
+                    </div>
+                    <div style="color: {health_color}; font-weight: 500; font-size: 1.1rem; text-align: center;">
+                        {healthy_keys} 个
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            with col4:
+                # 后台检测状态
+                bg_check = current_config.get('background_health_check', True)
+                bg_color = "#8b5cf6" if bg_check else "#6b7280"
+                bg_text = "已启用" if bg_check else "已禁用"
+                bg_icon = "🔍" if bg_check else "⏸️"
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">{bg_icon}</span>
+                        <span style="font-weight: 600; color: #374151;">后台检测</span>
+                    </div>
+                    <div style="color: {bg_color}; font-weight: 500; font-size: 1rem; text-align: center;">
+                        {bg_text}
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            # === 配置表单 ===
+            st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
+            st.markdown("##### ⚙️ 故障转移策略配置")
+
+            with st.form("failover_config_form"):
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.markdown("**核心策略**")
+
+                    # 快速故障转移开关
+                    fast_failover_enabled = st.checkbox(
+                        "⚡ 启用快速故障转移",
+                        value=current_config.get('fast_failover_enabled', True),
+                        help="启用后，失败的Key会立即切换到下一个，而不是重试"
+                    )
+
+                    # 最大Key尝试次数
+                    max_key_attempts = st.slider(
+                        "🔄 最大Key尝试次数",
+                        min_value=1,
+                        max_value=min(20, available_keys) if available_keys > 0 else 20,
+                        value=current_config.get('max_key_attempts', 5),
+                        help="单次请求最多尝试多少个不同的API Key"
+                    )
+
+                    # 单Key重试开关
+                    single_key_retry = st.checkbox(
+                        "🔂 单Key重试",
+                        value=current_config.get('single_key_retry', False),
+                        help="单个Key失败时是否重试（建议关闭以实现快速切换）"
+                    )
+
+                with col2:
+                    st.markdown("**高级设置**")
+
+                    # 后台健康检测
+                    background_health_check = st.checkbox(
+                        "🔍 启用后台健康检测",
+                        value=current_config.get('background_health_check', True),
+                        help="Key失败后在后台进行健康检测"
+                    )
+
+                    # 健康检测延迟
+                    health_check_delay = st.slider(
+                        "⏱️ 健康检测延迟 (秒)",
+                        min_value=1,
+                        max_value=60,
+                        value=current_config.get('health_check_delay', 5),
+                        help="Key失败后多久开始后台健康检测"
+                    )
+
+                # 策略说明
+                st.markdown("**策略说明：**")
+                if fast_failover_enabled:
+                    if single_key_retry:
+                        strategy_desc = "🟡 **混合模式**：每个Key会重试，失败后立即切换下一个Key"
+                    else:
+                        strategy_desc = "🟢 **快速模式**：Key失败立即切换，无重试，最大化响应速度"
+                else:
+                    strategy_desc = "🔵 **传统模式**：使用传统的重试机制，每个Key会多次重试"
+
+                st.info(strategy_desc)
+
+                # 性能预估
+                if fast_failover_enabled and not single_key_retry:
+                    expected_time = max_key_attempts * 2  # 估算：每次切换约2秒
+                    st.success(f"⚡ 预计最坏情况下的故障转移时间：约 {expected_time} 秒")
+                elif fast_failover_enabled and single_key_retry:
+                    expected_time = max_key_attempts * 6  # 估算：每个Key重试约6秒
+                    st.warning(f"⚠️ 预计最坏情况下的故障转移时间：约 {expected_time} 秒")
+                else:
+                    st.info("⏳ 传统模式下故障转移时间取决于网络条件和重试策略")
+
+                # 提交按钮
+                col1, col2 = st.columns(2)
+                with col1:
+                    save_config = st.form_submit_button(
+                        "💾 保存配置",
+                        type="primary",
+                        use_container_width=True
+                    )
+
+                with col2:
+                    # 获取统计信息按钮
+                    refresh_stats = st.form_submit_button(
+                        "📊 刷新统计",
+                        use_container_width=True
+                    )
+
+                # 处理表单提交
+                if save_config:
+                    config_data = {
+                        'fast_failover_enabled': fast_failover_enabled,
+                        'max_key_attempts': max_key_attempts,
+                        'single_key_retry': single_key_retry,
+                        'background_health_check': background_health_check,
+                        'health_check_delay': health_check_delay
+                    }
+
+                    result = update_failover_config(config_data)
+                    if result and result.get('success'):
+                        st.success("✅ 故障转移配置保存成功")
+                        st.info("🔄 新配置将在下次请求时生效")
+                        st.cache_data.clear()
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("❌ 配置保存失败，请重试")
+
+                if refresh_stats:
+                    st.cache_data.clear()
+                    st.rerun()
+
+            # === 统计信息和建议 ===
+            if failover_stats_data and failover_stats_data.get('success'):
+                st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
+                st.markdown("##### 📈 性能分析与建议")
+
+                stats = failover_stats_data
+                health_summary = stats.get('health_summary', {})
+                recommendations = stats.get('recommendations', {})
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.markdown("**Key健康状态分布**")
+                    healthy = health_summary.get('healthy', 0)
+                    unhealthy = health_summary.get('unhealthy', 0)
+                    unknown = health_summary.get('unknown', 0)
+                    total = health_summary.get('total_active', 0)
+
+                    if total > 0:
+                        st.markdown(f"""
+                        - 🟢 健康: {healthy} 个 ({healthy/total*100:.1f}%)
+                        - 🔴 异常: {unhealthy} 个 ({unhealthy/total*100:.1f}%)
+                        - 🟡 未知: {unknown} 个 ({unknown/total*100:.1f}%)
+                        """)
+                    else:
+                        st.warning("⚠️ 暂无激活的Key")
+
+                with col2:
+                    st.markdown("**智能建议**")
+                    optimal_attempts = recommendations.get('optimal_max_attempts', 5)
+                    fast_recommended = recommendations.get('fast_failover_recommended', True)
+                    bg_recommended = recommendations.get('background_check_recommended', True)
+
+                    if fast_recommended:
+                        st.success("✅ 建议启用快速故障转移")
+                    else:
+                        st.info("ℹ️ 当前Key状态良好，可使用传统模式")
+
+                    st.info(f"💡 建议最大尝试次数: {optimal_attempts}")
+
+                    if bg_recommended:
+                        st.success("✅ 建议启用后台健康检测")
+
+                # 配置对比
+                with st.expander("🔍 查看详细配置对比"):
+                    st.markdown("""
+                    | 配置项 | 快速模式 | 传统模式 | 混合模式 |
+                    |--------|----------|----------|----------|
+                    | **响应速度** | ⚡ 最快 | 🐢 较慢 | 🟡 中等 |
+                    | **资源消耗** | 💚 低 | 🔴 高 | 🟡 中等 |
+                    | **错误恢复** | ⚡ 立即切换 | 🔄 多次重试 | 🔄 少量重试 |
+                    | **适用场景** | 高并发生产环境 | 网络不稳定环境 | 平衡需求场景 |
+                    | **推荐指数** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
+
+                    **详细说明：**
+                    - **快速模式**：Key失败立即切换，无重试，适合生产环境
+                    - **传统模式**：使用传统重试机制，稳定但较慢
+                    - **混合模式**：少量重试后切换，平衡速度和稳定性
+                    """)
+
+    with tab4:
         st.markdown("#### 负载均衡策略")
         st.markdown("优化 API Key 选择策略")
 
@@ -3072,7 +3462,7 @@ elif page == "系统设置":
             if st.form_submit_button("保存策略", type="primary", use_container_width=True):
                 st.success(f"策略已更新为: {strategy_options[strategy]}")
 
-    with tab4:  # 自动清理标签页 - 完整重写版
+    with tab5:  # 自动清理标签页 - 完整重写版
         st.markdown("#### 🧹 自动清理异常API Key")
         st.markdown("智能识别并自动移除连续异常的API Key，确保服务质量和稳定性")
 
@@ -3433,7 +3823,7 @@ elif page == "系统设置":
             else:
                 st.success("✅ **状态良好**：所有API Key运行正常，自动清理功能正在守护您的服务质量。")
 
-    with tab5:
+    with tab6:
         st.markdown("#### 系统信息")
 
         col1, col2 = st.columns(2)
@@ -3441,7 +3831,7 @@ elif page == "系统设置":
         with col1:
             st.markdown("##### 服务信息")
             st.text(f"Python: {status_data.get('python_version', 'Unknown').split()[0]}")
-            st.text(f"版本: {status_data.get('version', '1.2.0')}")
+            st.text(f"版本: {status_data.get('version', '1.3.0')}")
             st.text(f"模型: {', '.join(status_data.get('models', []))}")
 
         with col2:
@@ -3456,7 +3846,7 @@ st.markdown(
     <div style='text-align: center; color: rgba(255, 255, 255, 0.7); font-size: 0.8125rem; margin-top: 4rem; padding: 2rem 0; border-top: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(255, 255, 255, 0.05); border-radius: 16px 16px 0 0; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);'>
         <a href='{API_BASE_URL}/health' target='_blank' style='color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: all 0.3s ease; padding: 0.25rem 0.5rem; border-radius: 6px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);' onmouseover='this.style.color="white"; this.style.background="rgba(255, 255, 255, 0.1)"; this.style.textShadow="0 0 8px rgba(255, 255, 255, 0.5)";' onmouseout='this.style.color="rgba(255, 255, 255, 0.8)"; this.style.background="transparent"; this.style.textShadow="none";'>健康检查</a> · 
         <span style='color: rgba(255, 255, 255, 0.6);'>{API_BASE_URL}</span> ·
-        <span style='color: rgba(255, 255, 255, 0.6);'>v1.2</span>
+        <span style='color: rgba(255, 255, 255, 0.6);'>v1.3</span>
     </div>
     """,
     unsafe_allow_html=True

@@ -7,6 +7,8 @@ import os
 import sys
 import base64
 import mimetypes
+import random
+import hashlib
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, AsyncGenerator, Union, Any
 from contextlib import asynccontextmanager
@@ -35,6 +37,149 @@ start_time = time.time()
 request_count = 0
 
 
+# 防自动化检测注入器
+class GeminiAntiDetectionInjector:
+    """
+    Gemini API 防自动化检测的 Unicode 字符注入器
+
+    功能特点：
+    1. 从精选的Unicode符号库中随机抽取字符
+    2. 支持多种注入策略和位置
+    3. 确保字符数量控制在5个以内
+    4. 兼容Gemini API的UTF-8编码要求
+    5. 避免使用可能导致解析错误的字符
+    """
+
+    def __init__(self):
+        # 安全的Unicode符号库 - 经过测试，兼容Gemini API
+        self.safe_symbols = [
+            # 数学符号
+            '∙', '∘', '∞', '≈', '≠', '≤', '≥', '±', '∓', '×', '÷', '∂', '∆', '∇',
+
+            # 几何图形
+            '○', '●', '◯', '◦', '◉', '◎', '⦿', '⊙', '⊚', '⊛', '⊜', '⊝',
+            '□', '■', '▢', '▣', '▤', '▥', '▦', '▧', '▨', '▩', '▪', '▫',
+            '△', '▲', '▴', '▵', '▶', '▷', '▸', '▹', '►', '▻', '▼', '▽',
+            '◀', '◁', '◂', '◃', '◄', '◅', '◆', '◇', '◈', '◉', '◊',
+
+            # 星号和装饰符号
+            '☆', '★', '⭐', '✦', '✧', '✩', '✪', '✫', '✬', '✭', '✮', '✯',
+            '✰', '✱', '✲', '✳', '✴', '✵', '✶', '✷', '✸', '✹', '✺', '✻',
+
+            # 箭头符号
+            '→', '←', '↑', '↓', '↔', '↕', '↖', '↗', '↘', '↙', '↚', '↛',
+            '⇒', '⇐', '⇑', '⇓', '⇔', '⇕', '⇖', '⇗', '⇘', '⇙', '⇚', '⇛',
+
+            # 标点和分隔符
+            '‖', '‗', '‰', '‱', '′', '″', '‴', '‵', '‶', '‷', '‸', '‹', '›',
+            '‼', '‽', '‾', '‿', '⁀', '⁁', '⁂', '⁃', '⁆', '⁇', '⁈', '⁉',
+
+            # 特殊标记
+            '※', '⁎', '⁑', '⁒', '⁓', '⁔', '⁕', '⁖', '⁗', '⁘', '⁙', '⁚',
+
+            # 带圆圈的符号
+            '⊕', '⊖', '⊗', '⊘', '⊙', '⊚', '⊛', '⊜', '⊝', '⊞', '⊟', '⊠',
+
+            # 小型符号
+            '⋄', '⋅', '⋆', '⋇', '⋈', '⋉', '⋊', '⋋', '⋌', '⋍', '⋎', '⋏'
+        ]
+
+        # 隐身符号 - 不可见但有效的Unicode字符
+        self.invisible_symbols = [
+            '\u200B',  # 零宽度空格
+            '\u200C',  # 零宽度非连接符
+            '\u2060',  # 单词连接符
+        ]
+
+        # 请求历史去重
+        self.request_history = set()
+        self.max_history_size = 5000
+
+    def inject_symbols(self, text: str, strategy: str = 'auto') -> str:
+        """注入随机符号到文本中"""
+        if not text.strip():
+            return text
+
+        # 随机选择符号数量 (2-4个，确保<5)
+        symbol_count = random.randint(2, 4)
+
+        # 选择符号类型
+        if strategy == 'invisible':
+            symbols = random.sample(self.invisible_symbols, min(2, len(self.invisible_symbols)))
+        elif strategy == 'mixed':
+            # 混合可见和不可见符号
+            visible_count = random.randint(1, 2)
+            invisible_count = 1
+            symbols = (random.sample(self.safe_symbols, visible_count) +
+                       random.sample(self.invisible_symbols, invisible_count))
+        else:
+            symbols = random.sample(self.safe_symbols, min(symbol_count, len(self.safe_symbols)))
+
+        # 随机选择注入策略
+        strategies = ['prefix', 'suffix', 'wrap']
+        if strategy == 'auto':
+            strategy = random.choice(strategies)
+
+        if strategy == 'prefix':
+            return ''.join(symbols) + ' ' + text
+        elif strategy == 'suffix':
+            return text + ' ' + ''.join(symbols)
+        elif strategy == 'wrap':
+            mid = len(symbols) // 2
+            prefix = ''.join(symbols[:mid])
+            suffix = ''.join(symbols[mid:])
+            return f"{prefix} {text} {suffix}" if prefix and suffix else f"{text} {suffix}"
+        else:
+            return text + ' ' + ''.join(symbols)
+
+    def process_content(self, content: Union[str, List]) -> Union[str, List]:
+        """处理各种格式的内容"""
+        content_hash = hashlib.md5(str(content).encode()).hexdigest()
+
+        # 检查是否已处理过相同内容
+        if content_hash in self.request_history:
+            # 强制使用不同策略
+            strategy = random.choice(['mixed', 'invisible', 'prefix', 'suffix'])
+        else:
+            strategy = 'auto'
+
+        self.request_history.add(content_hash)
+
+        # 限制历史记录大小
+        if len(self.request_history) > self.max_history_size:
+            old_records = list(self.request_history)
+            self.request_history = set(old_records[self.max_history_size // 2:])
+
+        if isinstance(content, str):
+            return self.inject_symbols(content, strategy)
+        elif isinstance(content, list):
+            # 处理消息列表
+            processed = []
+            for item in content:
+                if isinstance(item, dict):
+                    processed_item = item.copy()
+
+                    # 处理文本内容
+                    if 'text' in processed_item:
+                        processed_item['text'] = self.inject_symbols(processed_item['text'], strategy)
+
+                    processed.append(processed_item)
+                else:
+                    processed.append(item)
+            return processed
+
+        return content
+
+    def get_statistics(self) -> Dict:
+        """获取使用统计"""
+        return {
+            'available_symbols': len(self.safe_symbols),
+            'invisible_symbols': len(self.invisible_symbols),
+            'request_history_size': len(self.request_history),
+            'max_history_size': self.max_history_size
+        }
+
+
 # 思考配置模型
 class ThinkingConfig(BaseModel):
     thinking_budget: Optional[int] = None  # 0-32768, 0=禁用思考, None=自动
@@ -51,7 +196,7 @@ class ThinkingConfig(BaseModel):
         return v
 
 
-# 件数据模型
+# 文件数据模型
 class InlineData(BaseModel):
     """内联数据模型 - 用于小文件(<20MB)"""
     mime_type: Optional[str] = None  # 兼容旧字段名
@@ -114,6 +259,7 @@ class ContentPart(BaseModel):
             data['file_data'] = data['fileData']
 
         super().__init__(**data)
+
 
 # 请求/响应
 class ChatMessage(BaseModel):
@@ -381,9 +527,639 @@ async def auto_cleanup_failed_keys():
         logger.error(f"❌ Auto cleanup failed: {e}")
 
 
+# === 快速故障转移核心函数 ===
+
+async def update_key_performance_background(key_id: int, success: bool, response_time: float):
+    """
+    在后台异步更新key性能指标，不阻塞主请求流程
+    """
+    try:
+        db.update_key_performance(key_id, success, response_time)
+
+        # 如果失败，启动后台健康检测任务
+        if not success:
+            asyncio.create_task(schedule_health_check(key_id))
+
+    except Exception as e:
+        logger.error(f"Background performance update failed for key {key_id}: {e}")
+
+
+async def schedule_health_check(key_id: int):
+    """
+    调度后台健康检测任务
+    """
+    try:
+        # 获取配置中的延迟时间
+        config = db.get_failover_config()
+        delay = config.get('health_check_delay', 5)
+
+        # 延迟指定时间后执行健康检测，避免立即重复检测
+        await asyncio.sleep(delay)
+
+        key_info = db.get_gemini_key_by_id(key_id)
+        if key_info and key_info.get('status') == 1:  # 只检测激活的key
+            health_result = await check_gemini_key_health(key_info['key'])
+
+            # 更新健康状态
+            db.update_key_performance(
+                key_id,
+                health_result['healthy'],
+                health_result['response_time']
+            )
+
+            # 记录健康检测历史
+            db.record_daily_health_status(
+                key_id,
+                health_result['healthy'],
+                health_result['response_time']
+            )
+
+            status = "healthy" if health_result['healthy'] else "unhealthy"
+            logger.info(f"Background health check for key #{key_id}: {status}")
+
+    except Exception as e:
+        logger.error(f"Background health check failed for key {key_id}: {e}")
+
+
+async def log_usage_background(gemini_key_id: int, user_key_id: int, model_name: str, requests: int, tokens: int):
+    """
+    在后台异步记录使用量，不阻塞主请求流程
+    """
+    try:
+        db.log_usage(gemini_key_id, user_key_id, model_name, requests, tokens)
+    except Exception as e:
+        logger.error(f"Background usage logging failed: {e}")
+
+
+async def make_gemini_request_single_attempt(
+        gemini_key: str,
+        key_id: int,
+        gemini_request: Dict,
+        model_name: str,
+        timeout: float = 60.0
+) -> Dict:
+    """
+    对单个Gemini API Key进行单次请求尝试，失败立即返回
+    不进行重试，以实现快速故障转移
+    """
+    start_time = time.time()
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+
+            response = await client.post(
+                gemini_url,
+                json=gemini_request,
+                headers={"x-goog-api-key": gemini_key}
+            )
+
+            response_time = time.time() - start_time
+
+            if response.status_code == 200:
+                # 请求成功，在后台更新性能指标
+                asyncio.create_task(
+                    update_key_performance_background(key_id, True, response_time)
+                )
+                return response.json()
+            else:
+                # 请求失败，立即标记为失败并抛出异常
+                asyncio.create_task(
+                    update_key_performance_background(key_id, False, response_time)
+                )
+
+                error_detail = response.json() if response.content else {"error": {"message": "Unknown error"}}
+                error_msg = error_detail.get("error", {}).get("message", f"HTTP {response.status_code}")
+
+                logger.warning(f"Key #{key_id} failed with {response.status_code}: {error_msg}")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=error_msg
+                )
+
+    except httpx.TimeoutException:
+        response_time = time.time() - start_time
+        asyncio.create_task(
+            update_key_performance_background(key_id, False, response_time)
+        )
+        logger.warning(f"Key #{key_id} timeout after {response_time:.2f}s")
+        raise HTTPException(status_code=504, detail="Request timeout")
+
+    except httpx.RequestError as e:
+        response_time = time.time() - start_time
+        asyncio.create_task(
+            update_key_performance_background(key_id, False, response_time)
+        )
+        logger.warning(f"Key #{key_id} request error: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"Request error: {str(e)}")
+
+    except Exception as e:
+        response_time = time.time() - start_time
+        asyncio.create_task(
+            update_key_performance_background(key_id, False, response_time)
+        )
+        logger.error(f"Key #{key_id} unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def make_request_with_fast_failover(
+        gemini_request: Dict,
+        openai_request: ChatCompletionRequest,
+        model_name: str,
+        user_key_info: Dict = None,
+        max_key_attempts: int = None
+) -> Dict:
+    """
+    优化的快速故障转移请求处理
+    失败一次立即切换到下一个key，不进行重试
+    """
+    available_keys = db.get_available_gemini_keys()
+
+    if not available_keys:
+        logger.error("No available keys for request")
+        raise HTTPException(
+            status_code=503,
+            detail="No available API keys"
+        )
+
+    if max_key_attempts is None:
+        config = db.get_failover_config()
+        max_key_attempts = config.get('max_key_attempts', 5)
+    max_key_attempts = min(max_key_attempts, len(available_keys))
+
+    logger.info(f"Starting fast failover with up to {max_key_attempts} key attempts for model {model_name}")
+
+    failed_keys = []
+    last_error = None
+
+    for attempt in range(max_key_attempts):
+        try:
+            # 选择下一个可用的key（排除已失败的）
+            selection_result = await select_gemini_key_and_check_limits(
+                model_name,
+                excluded_keys=set(failed_keys)
+            )
+
+            if not selection_result:
+                logger.warning(f"No more available keys after {attempt} attempts")
+                break
+
+            key_info = selection_result['key_info']
+            logger.info(f"Fast failover attempt {attempt + 1}: Using key #{key_info['id']}")
+
+            try:
+                # 单次尝试，失败立即切换
+                response = await make_gemini_request_single_attempt(
+                    key_info['key'],
+                    key_info['id'],
+                    gemini_request,
+                    model_name,
+                    timeout=float(db.get_config('request_timeout', '60'))
+                )
+
+                logger.info(f"✅ Request successful with key #{key_info['id']} on attempt {attempt + 1}")
+
+                # 计算token使用量
+                total_tokens = 0
+                for candidate in response.get("candidates", []):
+                    content = candidate.get("content", {})
+                    parts = content.get("parts", [])
+                    for part in parts:
+                        if "text" in part:
+                            total_tokens += len(part["text"].split())
+
+                # 记录使用量
+                if user_key_info:
+                    # 在后台记录使用量，不阻塞响应
+                    asyncio.create_task(
+                        log_usage_background(
+                            key_info['id'],
+                            user_key_info['id'],
+                            model_name,
+                            1,
+                            total_tokens
+                        )
+                    )
+
+                # 更新速率限制
+                await rate_limiter.add_usage(model_name, 1, total_tokens)
+                return response
+
+            except HTTPException as e:
+                failed_keys.append(key_info['id'])
+                last_error = e
+
+                logger.warning(f"❌ Key #{key_info['id']} failed: {e.detail}")
+
+                # 记录失败的使用量
+                if user_key_info:
+                    asyncio.create_task(
+                        log_usage_background(
+                            key_info['id'],
+                            user_key_info['id'],
+                            model_name,
+                            1,
+                            0
+                        )
+                    )
+
+                await rate_limiter.add_usage(model_name, 1, 0)
+
+                # 如果是客户端错误（4xx），不继续尝试其他key
+                if 400 <= e.status_code < 500:
+                    logger.warning(f"Client error {e.status_code}, stopping failover")
+                    raise e
+
+                # 服务器错误或网络错误，继续尝试下一个key
+                continue
+
+        except Exception as e:
+            logger.error(f"Unexpected error during failover attempt {attempt + 1}: {str(e)}")
+            last_error = HTTPException(status_code=500, detail=str(e))
+            continue
+
+    # 所有key都失败了
+    failed_count = len(failed_keys)
+    logger.error(f"❌ All {failed_count} attempted keys failed for {model_name}")
+
+    if last_error:
+        raise last_error
+    else:
+        raise HTTPException(
+            status_code=503,
+            detail=f"All {failed_count} available API keys failed"
+        )
+
+
+async def stream_gemini_response_single_attempt(
+        gemini_key: str,
+        key_id: int,
+        gemini_request: Dict,
+        openai_request: ChatCompletionRequest,
+        model_name: str
+) -> AsyncGenerator[bytes, None]:
+    """
+    单次流式请求尝试，失败立即抛出异常
+    """
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:streamGenerateContent?alt=sse"
+    timeout = float(db.get_config('request_timeout', '60'))
+
+    logger.info(f"Starting single stream request to: {url}")
+
+    start_time = time.time()
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            async with client.stream(
+                    "POST",
+                    url,
+                    json=gemini_request,
+                    headers={"x-goog-api-key": gemini_key}
+            ) as response:
+                if response.status_code != 200:
+                    response_time = time.time() - start_time
+                    asyncio.create_task(
+                        update_key_performance_background(key_id, False, response_time)
+                    )
+
+                    error_text = await response.aread()
+                    error_msg = error_text.decode() if error_text else f"HTTP {response.status_code}"
+                    logger.error(f"Stream request failed with status {response.status_code}: {error_msg}")
+                    raise Exception(f"Stream request failed: {error_msg}")
+
+                stream_id = f"chatcmpl-{uuid.uuid4().hex[:8]}"
+                created = int(time.time())
+                total_tokens = 0
+                thinking_sent = False
+                has_content = False
+                processed_lines = 0
+
+                logger.info(f"Stream response started, status: {response.status_code}")
+
+                try:
+                    async for line in response.aiter_lines():
+                        processed_lines += 1
+
+                        if not line:
+                            continue
+
+                        if processed_lines <= 5:
+                            logger.debug(f"Stream line {processed_lines}: {line[:100]}...")
+
+                        if line.startswith("data: "):
+                            json_str = line[6:]
+
+                            if json_str.strip() == "[DONE]":
+                                logger.info("Received [DONE] signal from stream")
+                                break
+
+                            if not json_str.strip():
+                                continue
+
+                            try:
+                                data = json.loads(json_str)
+
+                                for candidate in data.get("candidates", []):
+                                    content_data = candidate.get("content", {})
+                                    parts = content_data.get("parts", [])
+
+                                    for part in parts:
+                                        if "text" in part:
+                                            text = part["text"]
+                                            if not text:
+                                                continue
+
+                                            total_tokens += len(text.split())
+                                            has_content = True
+
+                                            is_thought = part.get("thought", False)
+
+                                            if is_thought and not (openai_request.thinking_config and
+                                                                   openai_request.thinking_config.include_thoughts):
+                                                continue
+
+                                            if is_thought and not thinking_sent:
+                                                thinking_header = {
+                                                    "id": stream_id,
+                                                    "object": "chat.completion.chunk",
+                                                    "created": created,
+                                                    "model": openai_request.model,
+                                                    "choices": [{
+                                                        "index": 0,
+                                                        "delta": {"content": "**Thinking Process:**\n"},
+                                                        "finish_reason": None
+                                                    }]
+                                                }
+                                                yield f"data: {json.dumps(thinking_header, ensure_ascii=False)}\n\n".encode(
+                                                    'utf-8')
+                                                thinking_sent = True
+                                                logger.debug("Sent thinking header")
+                                            elif not is_thought and thinking_sent:
+                                                response_header = {
+                                                    "id": stream_id,
+                                                    "object": "chat.completion.chunk",
+                                                    "created": created,
+                                                    "model": openai_request.model,
+                                                    "choices": [{
+                                                        "index": 0,
+                                                        "delta": {"content": "\n\n**Response:**\n"},
+                                                        "finish_reason": None
+                                                    }]
+                                                }
+                                                yield f"data: {json.dumps(response_header, ensure_ascii=False)}\n\n".encode(
+                                                    'utf-8')
+                                                thinking_sent = False
+                                                logger.debug("Sent response header")
+
+                                            chunk_data = {
+                                                "id": stream_id,
+                                                "object": "chat.completion.chunk",
+                                                "created": created,
+                                                "model": openai_request.model,
+                                                "choices": [{
+                                                    "index": 0,
+                                                    "delta": {"content": text},
+                                                    "finish_reason": None
+                                                }]
+                                            }
+                                            yield f"data: {json.dumps(chunk_data, ensure_ascii=False)}\n\n".encode(
+                                                'utf-8')
+
+                                    finish_reason = candidate.get("finishReason")
+                                    if finish_reason:
+                                        finish_chunk = {
+                                            "id": stream_id,
+                                            "object": "chat.completion.chunk",
+                                            "created": created,
+                                            "model": openai_request.model,
+                                            "choices": [{
+                                                "index": 0,
+                                                "delta": {},
+                                                "finish_reason": map_finish_reason(finish_reason)
+                                            }]
+                                        }
+                                        yield f"data: {json.dumps(finish_chunk, ensure_ascii=False)}\n\n".encode(
+                                            'utf-8')
+                                        yield "data: [DONE]\n\n".encode('utf-8')
+
+                                        logger.info(
+                                            f"Stream completed with finish_reason: {finish_reason}, tokens: {total_tokens}")
+
+                                        response_time = time.time() - start_time
+                                        asyncio.create_task(
+                                            update_key_performance_background(key_id, True, response_time)
+                                        )
+                                        await rate_limiter.add_usage(model_name, 1, total_tokens)
+                                        return
+
+                            except json.JSONDecodeError as e:
+                                logger.warning(f"JSON decode error: {e}, line: {json_str[:200]}...")
+                                continue
+
+                        elif line.startswith("event: ") or line.startswith("id: ") or line.startswith("retry: "):
+                            continue
+
+                    # 如果正常结束但没有内容，抛出异常
+                    if not has_content:
+                        logger.warning(f"Stream ended without content after processing {processed_lines} lines")
+                        raise Exception("Stream response had no content")
+
+                    # 正常结束，发送完成信号
+                    if has_content:
+                        finish_chunk = {
+                            "id": stream_id,
+                            "object": "chat.completion.chunk",
+                            "created": created,
+                            "model": openai_request.model,
+                            "choices": [{
+                                "index": 0,
+                                "delta": {},
+                                "finish_reason": "stop"
+                            }]
+                        }
+                        yield f"data: {json.dumps(finish_chunk, ensure_ascii=False)}\n\n".encode('utf-8')
+                        yield "data: [DONE]\n\n".encode('utf-8')
+
+                        logger.info(
+                            f"Stream ended naturally, processed {processed_lines} lines, tokens: {total_tokens}")
+
+                        response_time = time.time() - start_time
+                        asyncio.create_task(
+                            update_key_performance_background(key_id, True, response_time)
+                        )
+
+                    await rate_limiter.add_usage(model_name, 1, total_tokens)
+
+                except (httpx.ReadError, httpx.RemoteProtocolError) as e:
+                    logger.warning(f"Stream connection error: {str(e)}")
+                    response_time = time.time() - start_time
+                    asyncio.create_task(
+                        update_key_performance_background(key_id, False, response_time)
+                    )
+                    raise Exception(f"Stream connection error: {str(e)}")
+
+    except (httpx.TimeoutException, httpx.ConnectError) as e:
+        logger.warning(f"Stream timeout/connection error: {str(e)}")
+        response_time = time.time() - start_time
+        asyncio.create_task(
+            update_key_performance_background(key_id, False, response_time)
+        )
+        raise Exception(f"Stream connection failed: {str(e)}")
+
+    except Exception as e:
+        logger.error(f"Unexpected stream error: {str(e)}")
+        response_time = time.time() - start_time
+        asyncio.create_task(
+            update_key_performance_background(key_id, False, response_time)
+        )
+        raise
+
+
+async def stream_with_fast_failover(
+        gemini_request: Dict,
+        openai_request: ChatCompletionRequest,
+        model_name: str,
+        user_key_info: Dict = None,
+        max_key_attempts: int = None
+) -> AsyncGenerator[bytes, None]:
+    """
+    优化的流式响应快速故障转移
+    """
+    available_keys = db.get_available_gemini_keys()
+
+    if not available_keys:
+        error_data = {
+            'error': {
+                'message': 'No available API keys',
+                'type': 'service_unavailable',
+                'code': 503
+            }
+        }
+        yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n".encode('utf-8')
+        yield "data: [DONE]\n\n".encode('utf-8')
+        return
+
+    if max_key_attempts is None:
+        config = db.get_failover_config()
+        max_key_attempts = config.get('max_key_attempts', 5)
+    max_key_attempts = min(max_key_attempts, len(available_keys))
+
+    logger.info(f"Starting stream fast failover with up to {max_key_attempts} key attempts for {model_name}")
+
+    failed_keys = []
+
+    for attempt in range(max_key_attempts):
+        try:
+            selection_result = await select_gemini_key_and_check_limits(
+                model_name,
+                excluded_keys=set(failed_keys)
+            )
+
+            if not selection_result:
+                break
+
+            key_info = selection_result['key_info']
+            logger.info(f"Stream fast failover attempt {attempt + 1}: Using key #{key_info['id']}")
+
+            success = False
+            total_tokens = 0
+
+            try:
+                async for chunk in stream_gemini_response_single_attempt(
+                        key_info['key'],
+                        key_info['id'],
+                        gemini_request,
+                        openai_request,
+                        model_name
+                ):
+                    yield chunk
+                    success = True
+
+                if success:
+                    # 在后台记录使用量
+                    if user_key_info:
+                        asyncio.create_task(
+                            log_usage_background(
+                                key_info['id'],
+                                user_key_info['id'],
+                                model_name,
+                                1,
+                                total_tokens
+                            )
+                        )
+
+                    await rate_limiter.add_usage(model_name, 1, total_tokens)
+                    return
+
+            except Exception as e:
+                failed_keys.append(key_info['id'])
+                logger.warning(f"Stream key #{key_info['id']} failed: {str(e)}")
+
+                # 在后台更新性能指标
+                asyncio.create_task(
+                    update_key_performance_background(key_info['id'], False, 0.0)
+                )
+
+                # 记录失败的使用量
+                if user_key_info:
+                    asyncio.create_task(
+                        log_usage_background(
+                            key_info['id'],
+                            user_key_info['id'],
+                            model_name,
+                            1,
+                            0
+                        )
+                    )
+
+                if attempt < max_key_attempts - 1:
+                    retry_msg = {
+                        'error': {
+                            'message': f'Key #{key_info["id"]} failed, trying next key...',
+                            'type': 'retry_info',
+                            'retry_attempt': attempt + 1
+                        }
+                    }
+                    yield f"data: {json.dumps(retry_msg, ensure_ascii=False)}\n\n".encode('utf-8')
+                    continue
+                else:
+                    break
+
+        except Exception as e:
+            logger.error(f"Stream failover error on attempt {attempt + 1}: {str(e)}")
+            continue
+
+    # 所有key都失败了
+    error_data = {
+        'error': {
+            'message': f'All {len(failed_keys)} available API keys failed',
+            'type': 'all_keys_failed',
+            'code': 503,
+            'failed_keys': failed_keys
+        }
+    }
+    yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n".encode('utf-8')
+    yield "data: [DONE]\n\n".encode('utf-8')
+
+
+# === 配置管理函数 ===
+
+async def should_use_fast_failover() -> bool:
+    """检查是否应该使用快速故障转移"""
+    config = db.get_failover_config()
+    return config.get('fast_failover_enabled', True)
+
+
+async def get_max_key_attempts() -> int:
+    """获取最大Key尝试次数"""
+    config = db.get_failover_config()
+    return config.get('max_key_attempts', 5)
+
+
 # 全局变量
 db = Database()
 rate_limiter = RateLimitCache()
+anti_detection = GeminiAntiDetectionInjector()  # 防检测注入器实例
 scheduler = None
 keep_alive_enabled = False
 
@@ -425,12 +1201,23 @@ file_storage: Dict[str, Dict] = {}
 GEMINI_FILE_API_BASE = "https://generativelanguage.googleapis.com/v1beta/files"
 
 
+# 初始化防检测配置
+def init_anti_detection_config():
+    """初始化防检测配置"""
+    try:
+        # 确保配置表中有防检测设置
+        db.set_config('anti_detection_enabled', 'true')
+        logger.info("✅ Anti-detection system initialized")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize anti-detection system: {e}")
+
+
 async def upload_file_to_gemini(file_content: bytes, mime_type: str, filename: str, gemini_key: str) -> Optional[str]:
     """上传文件到Gemini File API并返回fileUri"""
     try:
         # 构建上传请求
         url = f"{GEMINI_FILE_API_BASE}?key={gemini_key}"
-        
+
         # 准备multipart/form-data
         files = {
             'metadata': (None, json.dumps({
@@ -439,10 +1226,10 @@ async def upload_file_to_gemini(file_content: bytes, mime_type: str, filename: s
             }), 'application/json'),
             'data': (filename, file_content, mime_type)
         }
-        
+
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(url, files=files)
-            
+
         if response.status_code == 200:
             result = response.json()
             file_uri = result.get('uri')
@@ -455,7 +1242,7 @@ async def upload_file_to_gemini(file_content: bytes, mime_type: str, filename: s
         else:
             logger.error(f"Failed to upload file to Gemini: {response.status_code} - {response.text}")
             return None
-            
+
     except Exception as e:
         logger.error(f"Error uploading file to Gemini: {str(e)}")
         return None
@@ -467,17 +1254,17 @@ async def delete_file_from_gemini(file_uri: str, gemini_key: str) -> bool:
         # 从URI中提取文件名
         file_name = file_uri.split('/')[-1]
         url = f"{GEMINI_FILE_API_BASE}/{file_name}?key={gemini_key}"
-        
+
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.delete(url)
-            
+
         if response.status_code == 200:
             logger.info(f"File deleted from Gemini successfully: {file_uri}")
             return True
         else:
             logger.warning(f"Failed to delete file from Gemini: {response.status_code} - {response.text}")
             return False
-            
+
     except Exception as e:
         logger.error(f"Error deleting file from Gemini: {str(e)}")
         return False
@@ -488,36 +1275,36 @@ async def cleanup_expired_files():
     try:
         current_time = time.time()
         expired_files = []
-        
+
         for file_id, file_info in list(file_storage.items()):
             # 检查文件是否超过1天
             file_age = current_time - file_info.get('created_at', 0)
             if file_age > 1 * 24 * 3600:
                 expired_files.append(file_id)
-        
+
         cleaned_count = 0
         for file_id in expired_files:
             try:
                 file_info = file_storage[file_id]
-                
+
                 # 如果文件存储在Gemini，尝试删除
                 if "gemini_file_uri" in file_info and "gemini_key_used" in file_info:
                     await delete_file_from_gemini(file_info["gemini_file_uri"], file_info["gemini_key_used"])
-                
+
                 # 删除本地文件
                 if "file_path" in file_info and os.path.exists(file_info["file_path"]):
                     os.remove(file_info["file_path"])
-                
+
                 # 从存储中移除
                 del file_storage[file_id]
                 cleaned_count += 1
-                
+
             except Exception as e:
                 logger.error(f"Error cleaning up file {file_id}: {str(e)}")
-        
+
         if cleaned_count > 0:
             logger.info(f"Cleaned up {cleaned_count} expired files")
-        
+
     except Exception as e:
         logger.error(f"Error in cleanup_expired_files: {str(e)}")
 
@@ -527,10 +1314,13 @@ async def lifespan(app: FastAPI):
     global scheduler, keep_alive_enabled
 
     # 启动时的操作
-    logger.info("Starting Gemini API Proxy...")
+    logger.info("Starting Gemini API Proxy with Anti-Detection...")
     logger.info(f"Available API keys: {len(db.get_available_gemini_keys())}")
     logger.info(f"Environment: {'Render' if os.getenv('RENDER_EXTERNAL_URL') else 'Local'}")
     logger.info("✅ Gemini 2.5 multimodal features optimized")
+
+    # 初始化防检测系统
+    init_anti_detection_config()
 
     # 检查是否启用保活功能
     enable_keep_alive = os.getenv('ENABLE_KEEP_ALIVE', 'true').lower() == 'true'
@@ -580,7 +1370,7 @@ async def lifespan(app: FastAPI):
                 max_instances=1,
                 coalesce=True
             )
-            
+
             # 每天凌晨3点清理过期文件
             scheduler.add_job(
                 cleanup_expired_files,
@@ -616,8 +1406,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Gemini API Proxy",
-    description="A high-performance proxy for Gemini API with OpenAI compatibility, optimized multimodal support, auto keep-alive and auto-cleanup",
-    version="1.2.0",
+    description="A high-performance proxy for Gemini API with OpenAI compatibility, optimized multimodal support, auto keep-alive, auto-cleanup and anti-automation detection",
+    version="1.3.0",
     lifespan=lifespan
 )
 
@@ -822,13 +1612,13 @@ def process_multimodal_content(item: Dict) -> Optional[Dict]:
                         "fileUri": file_uri
                     }
                 }
-        
+
         # 处理通过文件ID引用的情况
         elif item.get('type') == 'file' and 'file_id' in item:
             file_id = item['file_id']
             if file_id in file_storage:
                 file_info = file_storage[file_id]
-                
+
                 if file_info.get('format') == 'inlineData':
                     return {
                         "inlineData": {
@@ -883,26 +1673,45 @@ def process_multimodal_content(item: Dict) -> Optional[Dict]:
         return None
 
 
-def openai_to_gemini(request: ChatCompletionRequest) -> Dict:
-    """将OpenAI格式转换为Gemini格式，"""
+def openai_to_gemini(request: ChatCompletionRequest, enable_anti_detection: bool = True) -> Dict:
+    """
+    将OpenAI格式转换为Gemini格式，包含防自动化检测功能
+    """
     contents = []
+
+    # 检查是否启用防检测（可以通过配置控制）
+    anti_detection_enabled = enable_anti_detection and db.get_config('anti_detection_enabled', 'true').lower() == 'true'
 
     for msg in request.messages:
         parts = []
 
         if isinstance(msg.content, str):
+            text_content = msg.content
+
+            # 应用防检测处理 - 只对用户消息应用，避免影响系统消息
+            if anti_detection_enabled and msg.role == 'user':
+                text_content = anti_detection.inject_symbols(text_content)
+
             if msg.role == "system":
-                parts.append({"text": f"[System]: {msg.content}"})
+                parts.append({"text": f"[System]: {text_content}"})
             else:
-                parts.append({"text": msg.content})
+                parts.append({"text": text_content})
+
         elif isinstance(msg.content, list):
             for item in msg.content:
                 if isinstance(item, str):
-                    parts.append({"text": item})
+                    text_content = item
+                    if anti_detection_enabled and msg.role == 'user':
+                        text_content = anti_detection.inject_symbols(text_content)
+                    parts.append({"text": text_content})
+
                 elif isinstance(item, dict):
                     if item.get('type') == 'text':
-                        parts.append({"text": item.get('text', '')})
-                    elif item.get('type') in ['image', 'image_url','audio', 'video', 'document']:
+                        text_content = item.get('text', '')
+                        if anti_detection_enabled and msg.role == 'user':
+                            text_content = anti_detection.inject_symbols(text_content)
+                        parts.append({"text": text_content})
+                    elif item.get('type') in ['image', 'image_url', 'audio', 'video', 'document']:
                         multimodal_part = process_multimodal_content(item)
                         if multimodal_part:
                             parts.append(multimodal_part)
@@ -1095,6 +1904,8 @@ async def select_gemini_key_and_check_limits(model_name: str, excluded_keys: set
     }
 
 
+# === 传统故障转移函数（保留用于兼容） ===
+
 async def make_gemini_request_with_retry(
         gemini_key: str,
         key_id: int,
@@ -1165,7 +1976,7 @@ async def make_request_with_failover(
         max_key_attempts: int = None,
         excluded_keys: set = None
 ) -> Dict:
-    """请求处理"""
+    """传统请求处理（保留用于兼容）"""
     if excluded_keys is None:
         excluded_keys = set()
 
@@ -1288,7 +2099,7 @@ async def stream_with_failover(
         max_key_attempts: int = None,
         excluded_keys: set = None
 ) -> AsyncGenerator[bytes, None]:
-    """流式响应处理"""
+    """传统流式响应处理（保留用于兼容）"""
     if excluded_keys is None:
         excluded_keys = set()
 
@@ -1699,10 +2510,13 @@ async def root():
     return {
         "service": "Gemini API Proxy",
         "status": "running",
-        "version": "1.2.0",
-        "features": ["Gemini 2.5 Multimodal", "OpenAI Compatible", "Smart Polling", "Auto Keep-Alive", "Auto-Cleanup"],
+        "version": "1.3.0",
+        "features": ["Gemini 2.5 Multimodal", "OpenAI Compatible", "Smart Polling", "Auto Keep-Alive", "Auto-Cleanup",
+                     "Anti-Automation Detection", "Fast Failover"],
         "keep_alive": keep_alive_enabled,
         "auto_cleanup": db.get_auto_cleanup_config()['enabled'],
+        "anti_detection": db.get_config('anti_detection_enabled', 'true').lower() == 'true',
+        "fast_failover": db.get_failover_config()['fast_failover_enabled'],
         "docs": "/docs",
         "health": "/health"
     }
@@ -1721,10 +2535,12 @@ async def health_check():
         "environment": "render" if os.getenv('RENDER_EXTERNAL_URL') else "local",
         "uptime_seconds": int(uptime),
         "request_count": request_count,
-        "version": "1.2.0",
+        "version": "1.3.0",
         "multimodal_support": "Gemini 2.5 Optimized",
         "keep_alive_enabled": keep_alive_enabled,
-        "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled']
+        "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled'],
+        "anti_detection_enabled": db.get_config('anti_detection_enabled', 'true').lower() == 'true',
+        "fast_failover_enabled": db.get_failover_config()['fast_failover_enabled']
     }
 
 
@@ -1736,7 +2552,9 @@ async def wake_up():
         "timestamp": datetime.now().isoformat(),
         "message": "Service is active",
         "keep_alive_enabled": keep_alive_enabled,
-        "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled']
+        "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled'],
+        "anti_detection_enabled": db.get_config('anti_detection_enabled', 'true').lower() == 'true',
+        "fast_failover_enabled": db.get_failover_config()['fast_failover_enabled']
     }
 
 
@@ -1751,7 +2569,7 @@ async def get_status():
     return {
         "service": "Gemini API Proxy",
         "status": "running",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "render_url": os.getenv('RENDER_EXTERNAL_URL'),
         "python_version": sys.version,
         "models": db.get_supported_models(),
@@ -1763,7 +2581,10 @@ async def get_status():
         "thinking_enabled": db.get_thinking_config()['enabled'],
         "multimodal_optimized": True,
         "keep_alive_enabled": keep_alive_enabled,
-        "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled']
+        "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled'],
+        "anti_detection_enabled": db.get_config('anti_detection_enabled', 'true').lower() == 'true',
+        "anti_detection_stats": anti_detection.get_statistics(),
+        "fast_failover_enabled": db.get_failover_config()['fast_failover_enabled']
     }
 
 
@@ -1782,7 +2603,10 @@ async def get_metrics():
         "requests_count": request_count,
         "database_size_mb": os.path.getsize(db.db_path) / 1024 / 1024 if os.path.exists(db.db_path) else 0,
         "keep_alive_enabled": keep_alive_enabled,
-        "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled']
+        "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled'],
+        "anti_detection_enabled": db.get_config('anti_detection_enabled', 'true').lower() == 'true',
+        "anti_detection_stats": anti_detection.get_statistics(),
+        "fast_failover_enabled": db.get_failover_config()['fast_failover_enabled']
     }
 
 
@@ -1793,16 +2617,17 @@ async def api_v1_info():
     supported_models = db.get_supported_models()
     thinking_config = db.get_thinking_config()
     cleanup_config = db.get_auto_cleanup_config()
+    failover_config = db.get_failover_config()
 
     render_url = os.getenv('RENDER_EXTERNAL_URL')
     base_url = render_url if render_url else 'https://your-service.onrender.com'
 
     return {
         "service": "Gemini API Proxy",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "api_version": "v1",
         "compatibility": "OpenAI API v1",
-        "description": "A high-performance proxy for Gemini API with OpenAI compatibility, optimized multimodal support, auto keep-alive and auto-cleanup",
+        "description": "A high-performance proxy for Gemini API with OpenAI compatibility, optimized multimodal support, auto keep-alive, auto-cleanup, anti-automation detection, and fast failover",
         "status": "operational",
         "base_url": base_url,
         "features": [
@@ -1812,12 +2637,13 @@ async def api_v1_info():
             "Thinking mode support",
             "Optimized Gemini 2.5 multimodal",
             "Streaming responses",
-            "Automatic failover",
+            "Fast failover",
             "Real-time monitoring",
             "Health checking",
             "Adaptive load balancing",
             "Auto keep-alive",
-            "Auto-cleanup unhealthy keys"
+            "Auto-cleanup unhealthy keys",
+            "Anti-automation detection"
         ],
         "endpoints": {
             "chat_completions": "/v1/chat/completions",
@@ -1838,7 +2664,10 @@ async def api_v1_info():
             "total_requests": request_count,
             "keep_alive_enabled": keep_alive_enabled,
             "auto_cleanup_enabled": cleanup_config['enabled'],
-            "auto_cleanup_threshold": cleanup_config['days_threshold']
+            "auto_cleanup_threshold": cleanup_config['days_threshold'],
+            "anti_detection_enabled": db.get_config('anti_detection_enabled', 'true').lower() == 'true',
+            "fast_failover_enabled": failover_config['fast_failover_enabled'],
+            "max_key_attempts": failover_config['max_key_attempts']
         },
         "multimodal_support": {
             "images": ["jpeg", "png", "gif", "webp", "bmp"],
@@ -1908,10 +2737,10 @@ async def upload_file(
             gemini_keys = db.get_available_gemini_keys()
             if not gemini_keys:
                 raise HTTPException(status_code=503, detail="No available Gemini keys for file upload")
-            
-            gemini_key = gemini_keys[0]['api_key']
+
+            gemini_key = gemini_keys[0]['key']
             gemini_file_uri = await upload_file_to_gemini(file_content, mime_type, file.filename, gemini_key)
-            
+
             if gemini_file_uri:
                 file_info["gemini_file_uri"] = gemini_file_uri
                 file_info["gemini_key_used"] = gemini_key
@@ -2041,7 +2870,7 @@ async def delete_file(file_id: str, authorization: str = Header(None)):
         # 如果文件存储在Gemini File API，先从Gemini删除
         if "gemini_file_uri" in file_info and "gemini_key_used" in file_info:
             await delete_file_from_gemini(file_info["gemini_file_uri"], file_info["gemini_key_used"])
-        
+
         # 如果有本地文件，也删除
         if "file_path" in file_info and os.path.exists(file_info["file_path"]):
             os.remove(file_info["file_path"])
@@ -2063,7 +2892,7 @@ async def delete_file(file_id: str, authorization: str = Header(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# chat_completions端点
+# chat_completions端点 - 增强版包含防检测功能和快速故障转移
 @app.post("/v1/chat/completions")
 async def chat_completions(
         request: ChatCompletionRequest,
@@ -2109,31 +2938,79 @@ async def chat_completions(
 
         actual_model_name = get_actual_model_name(request.model)
         request.messages = inject_prompt_to_messages(request.messages)
-        gemini_request = openai_to_gemini(request)
+
+        # 使用增强版的转换函数，包含防检测功能
+        gemini_request = openai_to_gemini(request, enable_anti_detection=True)
 
         has_multimodal = any(msg.has_multimodal_content() for msg in request.messages)
         if has_multimodal:
             logger.info(f"Processing multimodal request for model {actual_model_name}")
 
-        if request.stream:
-            return StreamingResponse(
-                stream_with_failover(
+        # 记录防检测应用情况
+        anti_detection_enabled = db.get_config('anti_detection_enabled', 'true').lower() == 'true'
+        if anti_detection_enabled:
+            logger.info(f"Anti-detection processing applied for user {user_key_info['name']}")
+
+        # 使用配置化的故障转移
+        max_attempts = await get_max_key_attempts()
+        
+        # 获取管理员配置的流式逻辑
+        stream_config = db.get_stream_config()
+        stream_mode = stream_config.get('mode', 'auto')
+        
+        # 根据管理员配置决定是否使用流式响应
+        should_stream = False
+        if stream_mode == 'auto':
+            should_stream = request.stream  # 根据用户请求决定
+        elif stream_mode == 'force_stream':
+            should_stream = True  # 强制流式
+        elif stream_mode == 'force_non_stream':
+            should_stream = False  # 强制非流式
+        
+        logger.info(f"Stream mode: {stream_mode}, User requested stream: {request.stream}, Final decision: {should_stream}")
+
+        if should_stream:
+            if await should_use_fast_failover():
+                return StreamingResponse(
+                    stream_with_fast_failover(
+                        gemini_request,
+                        request,
+                        actual_model_name,
+                        user_key_info=user_key_info,
+                        max_key_attempts=max_attempts
+                    ),
+                    media_type="text/event-stream; charset=utf-8"
+                )
+            else:
+                # 回退到传统故障转移逻辑
+                return StreamingResponse(
+                    stream_with_failover(
+                        gemini_request,
+                        request,
+                        actual_model_name,
+                        user_key_info=user_key_info,
+                        max_key_attempts=max_attempts
+                    ),
+                    media_type="text/event-stream; charset=utf-8"
+                )
+        else:
+            if await should_use_fast_failover():
+                gemini_response = await make_request_with_fast_failover(
                     gemini_request,
                     request,
                     actual_model_name,
                     user_key_info=user_key_info,
-                    max_key_attempts=5
-                ),
-                media_type="text/event-stream; charset=utf-8"
-            )
-        else:
-            gemini_response = await make_request_with_failover(
-                gemini_request,
-                request,
-                actual_model_name,
-                user_key_info=user_key_info,
-                max_key_attempts=5
-            )
+                    max_key_attempts=max_attempts
+                )
+            else:
+                # 回退到传统故障转移逻辑
+                gemini_response = await make_request_with_failover(
+                    gemini_request,
+                    request,
+                    actual_model_name,
+                    user_key_info=user_key_info,
+                    max_key_attempts=max_attempts
+                )
 
             total_tokens = 0
             for candidate in gemini_response.get("candidates", []):
@@ -2318,6 +3195,214 @@ async def manual_cleanup():
         }
     except Exception as e:
         logger.error(f"Manual cleanup failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 故障转移配置管理端点
+@app.get("/admin/config/failover")
+async def get_failover_config():
+    """获取故障转移配置"""
+    try:
+        config = db.get_failover_config()
+
+        # 获取当前Key统计信息
+        available_keys = db.get_available_gemini_keys()
+        healthy_keys = db.get_healthy_gemini_keys()
+
+        return {
+            "success": True,
+            "config": config,
+            "stats": {
+                "available_keys": len(available_keys),
+                "healthy_keys": len(healthy_keys),
+                "max_possible_attempts": min(len(available_keys), 20)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get failover config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/admin/config/failover")
+async def update_failover_config(request: dict):
+    """更新故障转移配置"""
+    try:
+        fast_failover_enabled = request.get('fast_failover_enabled')
+        max_key_attempts = request.get('max_key_attempts')
+        single_key_retry = request.get('single_key_retry')
+        background_health_check = request.get('background_health_check')
+        health_check_delay = request.get('health_check_delay')
+
+        success = db.set_failover_config(
+            fast_failover_enabled=fast_failover_enabled,
+            max_key_attempts=max_key_attempts,
+            single_key_retry=single_key_retry,
+            background_health_check=background_health_check,
+            health_check_delay=health_check_delay
+        )
+
+        if success:
+            logger.info(f"Updated failover config: {request}")
+            return {
+                "success": True,
+                "message": "Failover configuration updated successfully"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update failover configuration")
+
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to update failover config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/admin/failover/stats")
+async def get_failover_stats():
+    """获取故障转移统计信息"""
+    try:
+        # 获取Key健康状态统计
+        health_summary = db.get_keys_health_summary()
+
+        # 获取最近的故障转移统计（可以从使用日志中统计）
+        # 这里可以添加更详细的统计逻辑
+
+        return {
+            "success": True,
+            "health_summary": health_summary,
+            "config": db.get_failover_config(),
+            "recommendations": {
+                "optimal_max_attempts": min(max(health_summary.get('healthy', 0), 2), 5),
+                "fast_failover_recommended": health_summary.get('unhealthy', 0) > 0,
+                "background_check_recommended": True
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get failover stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 防检测管理端点
+@app.post("/admin/config/anti-detection")
+async def update_anti_detection_config(request: dict):
+    """更新防检测配置"""
+    try:
+        enabled = request.get('enabled')
+
+        if enabled is not None:
+            success = db.set_config('anti_detection_enabled', 'true' if enabled else 'false')
+
+            if success:
+                logger.info(f"Anti-detection enabled: {enabled}")
+                return {
+                    "success": True,
+                    "message": f"Anti-detection {'enabled' if enabled else 'disabled'} successfully"
+                }
+            else:
+                raise HTTPException(status_code=500, detail="Failed to update anti-detection configuration")
+        else:
+            raise HTTPException(status_code=422, detail="Missing 'enabled' parameter")
+
+    except Exception as e:
+        logger.error(f"Failed to update anti-detection config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/admin/config/anti-detection")
+async def get_anti_detection_config():
+    """获取防检测配置"""
+    try:
+        enabled = db.get_config('anti_detection_enabled', 'true').lower() == 'true'
+
+        return {
+            "success": True,
+            "anti_detection_enabled": enabled,
+            "statistics": anti_detection.get_statistics()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get anti-detection config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 流式逻辑配置管理端点
+@app.post("/admin/config/stream")
+async def update_stream_config(request: dict):
+    """更新流式逻辑配置"""
+    try:
+        mode = request.get('mode')
+
+        if mode is not None:
+            if mode not in ['auto', 'force_stream', 'force_non_stream']:
+                raise HTTPException(status_code=422, detail="mode must be one of: auto, force_stream, force_non_stream")
+            
+            success = db.set_stream_config(mode=mode)
+
+            if success:
+                logger.info(f"Stream mode updated to: {mode}")
+                return {
+                    "success": True,
+                    "message": f"Stream mode updated to {mode} successfully"
+                }
+            else:
+                raise HTTPException(status_code=500, detail="Failed to update stream configuration")
+        else:
+            raise HTTPException(status_code=422, detail="Missing 'mode' parameter")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update stream config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/admin/config/stream")
+async def get_stream_config():
+    """获取流式逻辑配置"""
+    try:
+        config = db.get_stream_config()
+        
+        return {
+            "success": True,
+            "stream_mode": config['mode'],
+            "available_modes": [
+                {"value": "auto", "label": "自动（根据用户请求）"},
+                {"value": "force_stream", "label": "强制流式"},
+                {"value": "force_non_stream", "label": "强制非流式"}
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Failed to get stream config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/admin/test/anti-detection")
+async def test_anti_detection():
+    """测试防检测功能"""
+    try:
+        test_texts = [
+            "请帮我分析这个问题",
+            "翻译以下文本",
+            "生成一个创意故事",
+            "解释人工智能的工作原理"
+        ]
+
+        results = []
+        for text in test_texts:
+            processed = anti_detection.inject_symbols(text)
+            results.append({
+                "original": text,
+                "processed": processed,
+                "char_difference": len(processed) - len(text)
+            })
+
+        return {
+            "success": True,
+            "test_results": results,
+            "total_symbols_available": len(anti_detection.safe_symbols)
+        }
+
+    except Exception as e:
+        logger.error(f"Anti-detection test failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -2795,13 +3880,21 @@ async def get_all_config():
         thinking_config = db.get_thinking_config()
         inject_config = db.get_inject_prompt_config()
         cleanup_config = db.get_auto_cleanup_config()
+        failover_config = db.get_failover_config()
+
+        # 添加防检测配置
+        anti_detection_config = {
+            'enabled': db.get_config('anti_detection_enabled', 'true').lower() == 'true'
+        }
 
         return {
             "success": True,
             "system_configs": configs,
             "thinking_config": thinking_config,
             "inject_config": inject_config,
-            "cleanup_config": cleanup_config
+            "cleanup_config": cleanup_config,
+            "anti_detection_config": anti_detection_config,
+            "failover_config": failover_config
         }
     except Exception as e:
         logger.error(f"Failed to get configs: {str(e)}")
@@ -2825,7 +3918,10 @@ async def get_admin_stats():
         "inject_config": db.get_inject_prompt_config(),
         "cleanup_config": db.get_auto_cleanup_config(),
         "health_summary": health_summary,
-        "keep_alive_enabled": keep_alive_enabled
+        "keep_alive_enabled": keep_alive_enabled,
+        "anti_detection_enabled": db.get_config('anti_detection_enabled', 'true').lower() == 'true',
+        "anti_detection_stats": anti_detection.get_statistics(),
+        "failover_config": db.get_failover_config()
     }
 
 
@@ -2838,5 +3934,5 @@ def run_api_server(port: int = 8000):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     logger.info(
-        f"Starting Gemini API Proxy with optimized multimodal support, auto keep-alive and auto-cleanup on port {port}")
+        f"Starting Gemini API Proxy with optimized multimodal support, auto keep-alive, auto-cleanup, anti-automation detection and fast failover on port {port}")
     run_api_server(port)
