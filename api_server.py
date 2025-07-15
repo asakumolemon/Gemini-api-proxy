@@ -36,22 +36,13 @@ logger = logging.getLogger(__name__)
 start_time = time.time()
 request_count = 0
 
-
 # 防自动化检测注入器
 class GeminiAntiDetectionInjector:
     """
-    Gemini API 防自动化检测的 Unicode 字符注入器
-
-    功能特点：
-    1. 从精选的Unicode符号库中随机抽取字符
-    2. 支持多种注入策略和位置
-    3. 确保字符数量控制在5个以内
-    4. 兼容Gemini API的UTF-8编码要求
-    5. 避免使用可能导致解析错误的字符
+    防自动化检测的 Unicode 字符注入器
     """
-
     def __init__(self):
-        # 安全的Unicode符号库 - 经过测试，兼容Gemini API
+        # Unicode符号库
         self.safe_symbols = [
             # 数学符号
             '∙', '∘', '∞', '≈', '≠', '≤', '≥', '±', '∓', '×', '÷', '∂', '∆', '∇',
@@ -84,7 +75,7 @@ class GeminiAntiDetectionInjector:
             '⋄', '⋅', '⋆', '⋇', '⋈', '⋉', '⋊', '⋋', '⋌', '⋍', '⋎', '⋏'
         ]
 
-        # 隐身符号 - 不可见但有效的Unicode字符
+        # 隐身符号
         self.invisible_symbols = [
             '\u200B',  # 零宽度空格
             '\u200C',  # 零宽度非连接符
@@ -259,7 +250,6 @@ class ContentPart(BaseModel):
             data['file_data'] = data['fileData']
 
         super().__init__(**data)
-
 
 # 请求/响应
 class ChatMessage(BaseModel):
@@ -526,9 +516,7 @@ async def auto_cleanup_failed_keys():
     except Exception as e:
         logger.error(f"❌ Auto cleanup failed: {e}")
 
-
-# === 快速故障转移核心函数 ===
-
+# 快速故障转移函数
 async def update_key_performance_background(key_id: int, success: bool, response_time: float):
     """
     在后台异步更新key性能指标，不阻塞主请求流程
@@ -598,10 +586,6 @@ async def make_gemini_request_single_attempt(
         model_name: str,
         timeout: float = 60.0
 ) -> Dict:
-    """
-    对单个Gemini API Key进行单次请求尝试，失败立即返回
-    不进行重试，以实现快速故障转移
-    """
     start_time = time.time()
 
     try:
@@ -670,8 +654,7 @@ async def make_request_with_fast_failover(
         max_key_attempts: int = None
 ) -> Dict:
     """
-    优化的快速故障转移请求处理
-    失败一次立即切换到下一个key，不进行重试
+    快速故障转移请求处理
     """
     available_keys = db.get_available_gemini_keys()
 
@@ -789,7 +772,6 @@ async def make_request_with_fast_failover(
             status_code=503,
             detail=f"All {failed_count} available API keys failed"
         )
-
 
 async def stream_gemini_response_single_attempt(
         gemini_key: str,
@@ -1023,7 +1005,7 @@ async def stream_with_fast_failover(
         max_key_attempts: int = None
 ) -> AsyncGenerator[bytes, None]:
     """
-    优化的流式响应快速故障转移
+    流式响应快速故障转移
     """
     available_keys = db.get_available_gemini_keys()
 
@@ -1142,8 +1124,7 @@ async def stream_with_fast_failover(
     yield "data: [DONE]\n\n".encode('utf-8')
 
 
-# === 配置管理函数 ===
-
+# 配置管理函数
 async def should_use_fast_failover() -> bool:
     """检查是否应该使用快速故障转移"""
     config = db.get_failover_config()
@@ -1154,7 +1135,6 @@ async def get_max_key_attempts() -> int:
     """获取最大Key尝试次数"""
     config = db.get_failover_config()
     return config.get('max_key_attempts', 5)
-
 
 # 全局变量
 db = Database()
@@ -1321,6 +1301,14 @@ async def lifespan(app: FastAPI):
 
     # 初始化防检测系统
     init_anti_detection_config()
+
+    # 启动时执行一次健康检测
+    try:
+        logger.info("🔍 Performing initial health check for all API keys...")
+        await record_hourly_health_check()
+        logger.info("✅ Initial health check completed")
+    except Exception as e:
+        logger.error(f"❌ Initial health check failed: {e}")
 
     # 检查是否启用保活功能
     enable_keep_alive = os.getenv('ENABLE_KEEP_ALIVE', 'true').lower() == 'true'
@@ -1675,7 +1663,7 @@ def process_multimodal_content(item: Dict) -> Optional[Dict]:
 
 def openai_to_gemini(request: ChatCompletionRequest, enable_anti_detection: bool = True) -> Dict:
     """
-    将OpenAI格式转换为Gemini格式，包含防自动化检测功能
+    将OpenAI格式转换为Gemini格式
     """
     contents = []
 
@@ -1904,8 +1892,7 @@ async def select_gemini_key_and_check_limits(model_name: str, excluded_keys: set
     }
 
 
-# === 传统故障转移函数（保留用于兼容） ===
-
+# 传统故障转移函数
 async def make_gemini_request_with_retry(
         gemini_key: str,
         key_id: int,
@@ -2892,7 +2879,7 @@ async def delete_file(file_id: str, authorization: str = Header(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# chat_completions端点 - 增强版包含防检测功能和快速故障转移
+# chat_completions端点
 @app.post("/v1/chat/completions")
 async def chat_completions(
         request: ChatCompletionRequest,
@@ -3226,14 +3213,12 @@ async def update_failover_config(request: dict):
     try:
         fast_failover_enabled = request.get('fast_failover_enabled')
         max_key_attempts = request.get('max_key_attempts')
-        single_key_retry = request.get('single_key_retry')
         background_health_check = request.get('background_health_check')
         health_check_delay = request.get('health_check_delay')
 
         success = db.set_failover_config(
             fast_failover_enabled=fast_failover_enabled,
             max_key_attempts=max_key_attempts,
-            single_key_retry=single_key_retry,
             background_health_check=background_health_check,
             health_check_delay=health_check_delay
         )
@@ -3262,8 +3247,6 @@ async def get_failover_stats():
         health_summary = db.get_keys_health_summary()
 
         # 获取最近的故障转移统计（可以从使用日志中统计）
-        # 这里可以添加更详细的统计逻辑
-
         return {
             "success": True,
             "health_summary": health_summary,
@@ -3327,9 +3310,9 @@ async def test_anti_detection():
     try:
         test_texts = [
             "请帮我分析这个问题",
-            "翻译以下文本",
-            "生成一个创意故事",
-            "解释人工智能的工作原理"
+            "使用中文回复：",
+            "请告诉我",
+            "我想说："
         ]
 
         results = []

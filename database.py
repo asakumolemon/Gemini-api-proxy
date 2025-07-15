@@ -12,7 +12,6 @@ import logging
 # 配置日志
 logger = logging.getLogger(__name__)
 
-
 class Database:
     def __init__(self, db_path: str = None):
         # Render 环境下使用持久化路径
@@ -239,10 +238,10 @@ class Database:
             ('request_timeout', '60', 'API请求超时时间（秒）'),
             ('load_balance_strategy', 'adaptive', '负载均衡策略: least_used, round_robin, adaptive'),
 
-            # 新增：快速故障转移配置
+            # 快速故障转移配置
             ('fast_failover_enabled', 'true', '是否启用快速故障转移'),
             ('max_key_attempts', '5', '单次请求最多尝试的Key数量'),
-            ('single_key_retry', 'false', '单个Key是否进行重试（建议关闭以实现快速切换）'),
+            ('single_key_retry', 'false', '单个Key是否进行重试'),
             ('background_health_check', 'true', '是否启用后台健康检测'),
             ('health_check_delay', '5', '失败后健康检测延迟时间（秒）'),
 
@@ -270,7 +269,7 @@ class Database:
             ('anti_detection_enabled', 'true', '是否启用防自动化检测'),
             
             # 流式模式配置
-            ('stream_mode', 'auto', '流式模式设置: auto=自动, stream=强制流式, non_stream=强制非流式'),
+            ('stream_mode', 'auto', '流式模式设置: auto=自动, stream=流式, non_stream=非流式'),
         ]
 
         for key, value, description in default_configs:
@@ -463,7 +462,6 @@ class Database:
             return {
                 'fast_failover_enabled': self.get_config('fast_failover_enabled', 'true').lower() == 'true',
                 'max_key_attempts': int(self.get_config('max_key_attempts', '5')),
-                'single_key_retry': self.get_config('single_key_retry', 'false').lower() == 'true',
                 'background_health_check': self.get_config('background_health_check', 'true').lower() == 'true',
                 'health_check_delay': int(self.get_config('health_check_delay', '5')),
             }
@@ -472,14 +470,12 @@ class Database:
             return {
                 'fast_failover_enabled': True,
                 'max_key_attempts': 5,
-                'single_key_retry': False,
                 'background_health_check': True,
                 'health_check_delay': 5,
             }
 
     def set_failover_config(self, fast_failover_enabled: bool = None, max_key_attempts: int = None,
-                            single_key_retry: bool = None, background_health_check: bool = None,
-                            health_check_delay: int = None) -> bool:
+                            background_health_check: bool = None, health_check_delay: int = None) -> bool:
         """设置故障转移配置"""
         try:
             if fast_failover_enabled is not None:
@@ -489,9 +485,6 @@ class Database:
                 if not (1 <= max_key_attempts <= 20):
                     raise ValueError("max_key_attempts must be between 1 and 20")
                 self.set_config('max_key_attempts', str(max_key_attempts))
-
-            if single_key_retry is not None:
-                self.set_config('single_key_retry', 'true' if single_key_retry else 'false')
 
             if background_health_check is not None:
                 self.set_config('background_health_check', 'true' if background_health_check else 'false')
@@ -530,7 +523,7 @@ class Database:
             logger.error(f"Failed to set anti detection config: {e}")
             return False
 
-    # 模型配置管理（更新为单API限制）
+    # 模型配置管理
     def get_supported_models(self) -> List[str]:
         """获取支持的模型列表"""
         return ['gemini-2.5-flash', 'gemini-2.5-pro']
@@ -863,12 +856,12 @@ class Database:
             logger.error(f"Failed to record daily health status for key {key_id}: {e}")
 
     def get_consecutive_unhealthy_days(self, key_id: int, days_threshold: int = 3) -> int:
-        """获取连续异常天数 - 修复版本"""
+        """获取连续异常天数"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
 
-                # 修复SQL查询，使用参数化查询避免SQL注入
+                # 使用参数化查询避免SQL注入
                 cursor.execute('''
                     SELECT check_date, success_rate 
                     FROM health_check_history 
@@ -900,7 +893,7 @@ class Database:
             return 0  # 出错时返回0，不影响功能
 
     def get_at_risk_keys(self, days_threshold: int = None) -> List[Dict]:
-        """获取有风险的API keys - 修复版本"""
+        """获取有风险的API keys"""
         try:
             if days_threshold is None:
                 days_threshold = int(self.get_config('auto_cleanup_days', '3'))
