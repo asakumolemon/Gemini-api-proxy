@@ -3128,74 +3128,21 @@ elif page == "系统设置":
                 'round_robin': '轮流使用策略'
             }
 
-            selected_strategy = st.selectbox(
+            strategy = st.selectbox(
                 "选择负载均衡策略",
                 options=list(strategy_options.keys()),
                 format_func=lambda x: strategy_options[x],
                 index=list(strategy_options.keys()).index(current_strategy)
             )
 
-            # 策略说明
-            if selected_strategy == 'adaptive':
-                st.info("🧠 **自适应策略**: 根据Key的健康状态和性能自动选择最优Key")
-            elif selected_strategy == 'least_used':
-                st.info("📊 **最少使用策略**: 优先选择使用次数最少的Key")
-            elif selected_strategy == 'round_robin':
-                st.info("🔄 **轮流使用策略**: 按顺序轮流使用所有可用Key")
-
             if st.form_submit_button("保存策略", type="primary", use_container_width=True):
                 result = call_api('/admin/config', 'POST', {
-                    'load_balance_strategy': selected_strategy
+                    'load_balance_strategy': strategy
                 })
                 if result and result.get('success'):
-                    st.success(f"策略已更新为: {strategy_options[selected_strategy]}")
-                    st.cache_data.clear()
-                    time.sleep(1)
-                    st.rerun()
+                    st.success(f"策略已更新为: {strategy_options[strategy]}")
 
-    with tab5:
-        st.markdown("#### ⚖️ 负载均衡策略")
-        st.markdown("优化 API Key 选择策略")
-
-        # 获取当前策略
-        all_configs = call_api('/admin/config')
-        current_strategy = 'adaptive'
-
-        if all_configs and all_configs.get('success'):
-            system_configs = all_configs.get('system_configs', [])
-            for config in system_configs:
-                if config['key'] == 'load_balance_strategy':
-                    current_strategy = config['value']
-                    break
-
-        with st.form("load_balance_form"):
-            strategy_options = {
-                'adaptive': '自适应策略',
-                'least_used': '最少使用策略',
-                'round_robin': '轮流使用策略'
-            }
-
-            strategy_descriptions = {
-                'adaptive': '根据成功率和响应时间智能选择',
-                'least_used': '优先使用请求最少的密钥',
-                'round_robin': '按顺序轮流使用'
-            }
-
-            strategy = st.selectbox(
-                "选择策略",
-                options=list(strategy_options.keys()),
-                format_func=lambda x: strategy_options[x],
-                index=list(strategy_options.keys()).index(current_strategy)
-            )
-
-            st.info(strategy_descriptions[strategy])
-
-            if st.form_submit_button("保存策略", type="primary", use_container_width=True):
-                st.success(f"策略已更新为: {strategy_options[strategy]}")
-
-
-
-    with tab4:  # 故障转移配置标签页
+    with tab5:  # 故障转移配置标签页
         st.markdown("#### ⚡ 快速故障转移配置")
         st.markdown("配置智能故障转移策略，优化请求处理和错误恢复机制")
 
@@ -3392,6 +3339,10 @@ elif page == "系统设置":
                 if refresh_stats:
                     st.cache_data.clear()
                     st.rerun()
+
+
+
+
 
     with tab6:  # 自动清理标签页
         st.markdown("#### 🧹 自动清理异常API Key")
