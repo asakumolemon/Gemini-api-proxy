@@ -2954,20 +2954,17 @@ async def chat_completions(
         # 使用配置化的故障转移
         max_attempts = await get_max_key_attempts()
         
-        # 获取管理员配置的流式逻辑
-        stream_config = db.get_stream_config()
-        stream_mode = stream_config.get('mode', 'auto')
+        # 获取管理者配置的流式模式
+        stream_mode_config = db.get_stream_mode_config()
+        stream_mode = stream_mode_config.get('mode', 'auto')
         
-        # 根据管理员配置决定是否使用流式响应
-        should_stream = False
-        if stream_mode == 'auto':
-            should_stream = request.stream  # 根据用户请求决定
-        elif stream_mode == 'force_stream':
+        # 根据流式模式配置决定是否使用流式响应
+        should_stream = request.stream  # 默认跟随用户请求
+        if stream_mode == 'stream':
             should_stream = True  # 强制流式
-        elif stream_mode == 'force_non_stream':
+        elif stream_mode == 'non_stream':
             should_stream = False  # 强制非流式
-        
-        logger.info(f"Stream mode: {stream_mode}, User requested stream: {request.stream}, Final decision: {should_stream}")
+        # stream_mode == 'auto' 时保持原有逻辑，跟随用户请求
 
         if should_stream:
             if await should_use_fast_failover():
@@ -3321,57 +3318,6 @@ async def get_anti_detection_config():
         }
     except Exception as e:
         logger.error(f"Failed to get anti-detection config: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# 流式逻辑配置管理端点
-@app.post("/admin/config/stream")
-async def update_stream_config(request: dict):
-    """更新流式逻辑配置"""
-    try:
-        mode = request.get('mode')
-
-        if mode is not None:
-            if mode not in ['auto', 'force_stream', 'force_non_stream']:
-                raise HTTPException(status_code=422, detail="mode must be one of: auto, force_stream, force_non_stream")
-            
-            success = db.set_stream_config(mode=mode)
-
-            if success:
-                logger.info(f"Stream mode updated to: {mode}")
-                return {
-                    "success": True,
-                    "message": f"Stream mode updated to {mode} successfully"
-                }
-            else:
-                raise HTTPException(status_code=500, detail="Failed to update stream configuration")
-        else:
-            raise HTTPException(status_code=422, detail="Missing 'mode' parameter")
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to update stream config: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/admin/config/stream")
-async def get_stream_config():
-    """获取流式逻辑配置"""
-    try:
-        config = db.get_stream_config()
-        
-        return {
-            "success": True,
-            "stream_mode": config['mode'],
-            "available_modes": [
-                {"value": "auto", "label": "自动（根据用户请求）"},
-                {"value": "force_stream", "label": "强制流式"},
-                {"value": "force_non_stream", "label": "强制非流式"}
-            ]
-        }
-    except Exception as e:
-        logger.error(f"Failed to get stream config: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -3872,6 +3818,30 @@ async def update_inject_prompt_config(request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/admin/config/stream-mode")
+async def update_stream_mode_config(request: dict):
+    """更新流式模式配置"""
+    try:
+        mode = request.get('mode')
+
+        success = db.set_stream_mode_config(mode=mode)
+
+        if success:
+            logger.info(f"Updated stream mode config: mode={mode}")
+            return {
+                "success": True,
+                "message": "Stream mode configuration updated successfully"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update stream mode configuration")
+
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to update stream mode config: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/admin/config")
 async def get_all_config():
     """获取所有系统配置"""
@@ -3886,6 +3856,9 @@ async def get_all_config():
         anti_detection_config = {
             'enabled': db.get_config('anti_detection_enabled', 'true').lower() == 'true'
         }
+        
+        # 添加流式模式配置
+        stream_mode_config = db.get_stream_mode_config()
 
         return {
             "success": True,
@@ -3894,6 +3867,7 @@ async def get_all_config():
             "inject_config": inject_config,
             "cleanup_config": cleanup_config,
             "anti_detection_config": anti_detection_config,
+            "stream_mode_config": stream_mode_config,
             "failover_config": failover_config
         }
     except Exception as e:
@@ -3921,6 +3895,7 @@ async def get_admin_stats():
         "keep_alive_enabled": keep_alive_enabled,
         "anti_detection_enabled": db.get_config('anti_detection_enabled', 'true').lower() == 'true',
         "anti_detection_stats": anti_detection.get_statistics(),
+        "stream_mode_config": db.get_stream_mode_config(),
         "failover_config": db.get_failover_config()
     }
 

@@ -112,22 +112,6 @@ def update_cleanup_config(config_data):
     return call_api('/admin/cleanup/config', 'POST', config_data)
 
 
-def get_stream_config():
-    """获取流式配置"""
-    return call_api('/admin/config/stream')
-
-
-def update_stream_config(config_data):
-    """更新流式配置"""
-    return call_api('/admin/config/stream', 'POST', config_data)
-
-
-@st.cache_data(ttl=30)
-def get_cached_stream_config():
-    """获取缓存的流式配置"""
-    return get_stream_config()
-
-
 def manual_cleanup():
     """手动执行清理"""
     return call_api('/admin/cleanup/manual', 'POST')
@@ -2975,7 +2959,7 @@ elif page == "系统设置":
         st.stop()
 
     # 包含故障转移配置的标签页
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["思考模式", "提示词注入", "流式配置", "故障转移", "负载均衡", "自动清理", "系统信息"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["思考模式", "提示词注入", "流式模式", "故障转移", "负载均衡", "自动清理", "系统信息"])
 
     with tab1:
         st.markdown("#### 思考模式配置")
@@ -3077,82 +3061,52 @@ elif page == "系统设置":
                     st.rerun()
 
     with tab3:
-        st.markdown("#### 🌊 流式响应配置")
-        st.markdown("配置API响应的流式处理逻辑")
+        st.markdown("#### 🌊 流式模式配置")
+        st.markdown("配置API响应的流式输出行为")
 
-        # 获取当前流式配置
-        stream_config_data = get_cached_stream_config()
-        
-        if not stream_config_data or not stream_config_data.get('success'):
-            st.error("❌ 无法获取流式配置")
-        else:
-            current_mode = stream_config_data.get('stream_mode', 'auto')
-            available_modes = stream_config_data.get('available_modes', [])
+        stream_mode_config = stats_data.get('stream_mode_config', {})
+
+        with st.form("stream_mode_form"):
+            st.markdown("**选择流式模式**")
             
-            # 状态显示
-            mode_info = {
-                'auto': {'icon': '🔄', 'color': '#3b82f6', 'desc': '根据用户请求决定'},
-                'force_stream': {'icon': '🌊', 'color': '#10b981', 'desc': '所有响应都使用流式'},
-                'force_non_stream': {'icon': '📄', 'color': '#f59e0b', 'desc': '所有响应都使用非流式'}
+            mode_options = {
+                'auto': '自动模式 - 根据用户请求决定',
+                'stream': '强制流式 - 所有响应都使用流式输出',
+                'non_stream': '强制非流式 - 所有响应都使用非流式输出'
             }
             
-            current_info = mode_info.get(current_mode, mode_info['auto'])
+            current_mode = stream_mode_config.get('mode', 'auto')
             
-            st.markdown(f'''
-            <div class="status-card-style" style="margin-bottom: 1.5rem; padding: 1rem;">
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <span style="font-size: 1.5rem;">{current_info['icon']}</span>
-                    <div>
-                        <div style="font-weight: 600; color: #374151; font-size: 1.1rem;">当前流式模式</div>
-                        <div style="color: {current_info['color']}; font-weight: 500; margin-top: 0.25rem;">
-                            {next((mode['label'] for mode in available_modes if mode['value'] == current_mode), '自动模式')}
-                        </div>
-                        <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">
-                            {current_info['desc']}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            ''', unsafe_allow_html=True)
+            selected_mode = st.radio(
+                "流式模式",
+                options=list(mode_options.keys()),
+                format_func=lambda x: mode_options[x],
+                index=list(mode_options.keys()).index(current_mode)
+            )
             
-            # 配置表单
-            with st.form("stream_config_form"):
-                st.markdown("**选择流式响应模式**")
+            # 显示当前模式的详细说明
+            if selected_mode == 'auto':
+                st.info("🔄 **自动模式**: 系统会根据用户请求中的stream参数来决定是否使用流式输出。这是默认行为。")
+            elif selected_mode == 'stream':
+                st.warning("⚡ **强制流式**: 无论用户请求如何，所有API响应都将使用流式输出。适合需要实时响应的场景。")
+            elif selected_mode == 'non_stream':
+                st.warning("📦 **强制非流式**: 无论用户请求如何，所有API响应都将等待完整生成后一次性返回。适合需要完整响应的场景。")
+            
+            if st.form_submit_button("保存配置", type="primary", use_container_width=True):
+                update_data = {
+                    "mode": selected_mode
+                }
                 
-                # 创建模式选项的映射
-                mode_options = {mode['value']: mode['label'] for mode in available_modes}
-                
-                selected_mode = st.selectbox(
-                    "流式模式",
-                    options=list(mode_options.keys()),
-                    format_func=lambda x: mode_options[x],
-                    index=list(mode_options.keys()).index(current_mode) if current_mode in mode_options else 0,
-                    help="选择API响应的流式处理策略"
-                )
-                
-                # 模式说明
-                st.markdown("**模式说明：**")
-                st.markdown("""
-                - **自动模式**：根据客户端请求中的 `stream` 参数决定是否使用流式响应
-                - **强制流式**：无论客户端请求如何，都返回流式响应
-                - **强制非流式**：无论客户端请求如何，都返回完整的非流式响应
-                """)
-                
-                if st.form_submit_button("保存配置", type="primary", use_container_width=True):
-                    update_data = {
-                        "mode": selected_mode
-                    }
-                    
-                    result = update_stream_config(update_data)
-                    if result and result.get('success'):
-                        st.success("流式配置已保存")
-                        st.cache_data.clear()
-                        time.sleep(1)
-                        st.rerun()
-                    else:
-                        st.error("保存失败，请重试")
+                result = call_api('/admin/config/stream-mode', 'POST', data=update_data)
+                if result and result.get('success'):
+                    st.success("配置已保存")
+                    st.cache_data.clear()
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("保存失败")
 
-    with tab4:  # 故障转移配置标签页
+    with tab5:  # 故障转移配置标签页
         st.markdown("#### ⚡ 快速故障转移配置")
         st.markdown("配置智能故障转移策略，优化请求处理和错误恢复机制")
 
@@ -3423,7 +3377,7 @@ elif page == "系统设置":
                     """)
 
     with tab4:
-        st.markdown("#### 负载均衡策略")
+        st.markdown("#### ⚖️ 负载均衡策略")
         st.markdown("优化 API Key 选择策略")
 
         # 获取当前策略
@@ -3461,10 +3415,6 @@ elif page == "系统设置":
 
             if st.form_submit_button("保存策略", type="primary", use_container_width=True):
                 st.success(f"策略已更新为: {strategy_options[strategy]}")
-
-    with tab5:  # 负载均衡标签页
-        st.markdown("#### ⚖️ 负载均衡配置")
-        st.info("负载均衡功能正在开发中...")
 
     with tab6:  # 自动清理标签页 - 完整重写版
         st.markdown("#### 🧹 自动清理异常API Key")
@@ -3828,7 +3778,7 @@ elif page == "系统设置":
                 st.success("✅ **状态良好**：所有API Key运行正常，自动清理功能正在守护您的服务质量。")
 
     with tab7:
-        st.markdown("#### 系统信息")
+        st.markdown("#### 📊 系统信息")
 
         col1, col2 = st.columns(2)
 

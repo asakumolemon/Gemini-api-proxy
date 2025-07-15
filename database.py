@@ -269,8 +269,8 @@ class Database:
             # 防自动化检测配置
             ('anti_detection_enabled', 'true', '是否启用防自动化检测'),
             
-            # 流式逻辑配置
-            ('stream_mode', 'auto', '流式逻辑模式: auto=自动, force_stream=强制流式, force_non_stream=强制非流式'),
+            # 流式模式配置
+            ('stream_mode', 'auto', '流式模式设置: auto=自动, stream=强制流式, non_stream=强制非流式'),
         ]
 
         for key, value, description in default_configs:
@@ -430,6 +430,32 @@ class Database:
             logger.error(f"Failed to set auto cleanup config: {e}")
             return False
 
+    # 流式模式配置方法
+    def get_stream_mode_config(self) -> Dict[str, any]:
+        """获取流式模式配置"""
+        try:
+            return {
+                'mode': self.get_config('stream_mode', 'auto')
+            }
+        except Exception as e:
+            logger.error(f"Failed to get stream mode config: {e}")
+            return {
+                'mode': 'auto'
+            }
+
+    def set_stream_mode_config(self, mode: str = None) -> bool:
+        """设置流式模式配置"""
+        try:
+            if mode is not None:
+                if mode not in ['auto', 'stream', 'non_stream']:
+                    raise ValueError("mode must be one of: auto, stream, non_stream")
+                self.set_config('stream_mode', mode)
+
+            return True
+        except Exception as e:
+            logger.error(f"Failed to set stream mode config: {e}")
+            return False
+
     # 故障转移配置方法
     def get_failover_config(self) -> Dict[str, any]:
         """获取故障转移配置"""
@@ -502,32 +528,6 @@ class Database:
             return True
         except Exception as e:
             logger.error(f"Failed to set anti detection config: {e}")
-            return False
-
-    # 流式逻辑配置方法
-    def get_stream_config(self) -> Dict[str, any]:
-        """获取流式逻辑配置"""
-        try:
-            return {
-                'mode': self.get_config('stream_mode', 'auto')
-            }
-        except Exception as e:
-            logger.error(f"Failed to get stream config: {e}")
-            return {
-                'mode': 'auto'
-            }
-
-    def set_stream_config(self, mode: str = None) -> bool:
-        """设置流式逻辑配置"""
-        try:
-            if mode is not None:
-                if mode not in ['auto', 'force_stream', 'force_non_stream']:
-                    raise ValueError("mode must be one of: auto, force_stream, force_non_stream")
-                self.set_config('stream_mode', mode)
-
-            return True
-        except Exception as e:
-            logger.error(f"Failed to set stream config: {e}")
             return False
 
     # 模型配置管理（更新为单API限制）
