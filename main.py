@@ -332,10 +332,6 @@ st.markdown("""
         }
 
         /* 卡片间距 */
-        [data-testid="metric-container"] {
-            margin-bottom: 0.75rem;
-            padding: 1rem 1.25rem;
-        }
 
         /* 按钮 */
         .stButton > button {
@@ -397,14 +393,7 @@ st.markdown("""
             border-radius: 12px;
         }
 
-        /* 超小屏幕下的度量卡片 */
-        [data-testid="metric-container"] {
-            padding: 0.875rem 1rem;
-        }
-
-        [data-testid="metric-container"] > div:nth-child(2) {
-            font-size: 1.875rem;
-        }
+        /* 超小屏幕下的度量卡片样式已移除 */
 
         /* 超小屏幕下的按钮 */
         .stButton > button {
@@ -493,58 +482,11 @@ st.markdown("""
         }
     }
 
-    /* 度量卡片玻璃效果 */
-    [data-testid="metric-container"] {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        padding: 1.5rem 1.75rem;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 
-            0 12px 40px rgba(0, 0, 0, 0.05),
-            0 4px 16px rgba(0, 0, 0, 0.03),
-            inset 0 1px 0 rgba(255, 255, 255, 0.6);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-
-    [data-testid="metric-container"]::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.8) 50%, 
-            transparent
-        );
-    }
-
-    [data-testid="metric-container"]:hover {
-        transform: translateY(-4px) scale(1.02);
-        box-shadow: 
-            0 20px 60px rgba(0, 0, 0, 0.08),
-            0 8px 32px rgba(0, 0, 0, 0.05),
-            inset 0 1px 0 rgba(255, 255, 255, 0.7);
-        border-color: rgba(255, 255, 255, 0.6);
-        background: rgba(255, 255, 255, 0.5);
-    }
+    /* 度量卡片样式已移除 */
 
     /* 移动端触摸 */
     @media (max-width: 768px) {
-        /* 卡片悬停动画 */
-        [data-testid="metric-container"]:hover {
-            transform: translateY(-2px) scale(1.01);
-        }
-
-        [data-testid="metric-container"]:active {
-            transform: scale(0.98);
-            transition: transform 0.15s ease;
-        }
+        /* 度量卡片悬停动画已移除 */
 
         /* 按钮动画 */
         .stButton > button:hover {
@@ -1828,7 +1770,8 @@ st.markdown("""
         margin-bottom: 1rem;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid rgba(99, 102, 241, 0.2);
-        padding-left: 0;
+        background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+        padding-left: 1rem;
         border-radius: 8px;
     }
 
@@ -1993,9 +1936,7 @@ st.markdown("""
             margin: 0.5rem;
         }
 
-        [data-testid="metric-container"] {
-            padding: 1rem 1.25rem;
-        }
+        /* 横屏模式下的度量卡片样式已移除 */
 
         h1 {
             font-size: 2rem !important;
@@ -2017,93 +1958,6 @@ st.markdown("""
         box-shadow: 
             0 10px 32px rgba(0, 0, 0, 0.06),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-
-    /* 自定义Primary按钮样式 - 使用蓝色系替代橙色 */
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
-        border: none !important;
-        color: white !important;
-        font-weight: 600 !important;
-        border-radius: 12px !important;
-        padding: 0.75rem 1.5rem !important;
-        box-shadow: 
-            0 4px 16px rgba(79, 70, 229, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #4338ca 0%, #5b21b6 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 
-            0 8px 24px rgba(79, 70, 229, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
-    }
-
-    .stButton > button[kind="primary"]:active {
-        transform: translateY(0px) scale(0.98) !important;
-        box-shadow: 
-            0 2px 8px rgba(79, 70, 229, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-    }
-
-    /* 自定义滑动条样式 - 使用蓝色系替代橙色 */
-    .stSlider > div > div > div > div {
-        background: linear-gradient(90deg, #e5e7eb 0%, #e5e7eb 100%) !important;
-    }
-
-    .stSlider > div > div > div > div > div {
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
-        border-radius: 4px !important;
-    }
-
-    .stSlider > div > div > div > div > div > div {
-        background: white !important;
-        border: 3px solid #4f46e5 !important;
-        box-shadow: 
-            0 4px 12px rgba(79, 70, 229, 0.3),
-            0 0 0 4px rgba(79, 70, 229, 0.1) !important;
-        width: 20px !important;
-        height: 20px !important;
-        border-radius: 50% !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .stSlider > div > div > div > div > div > div:hover {
-        transform: scale(1.2) !important;
-        box-shadow: 
-            0 6px 16px rgba(79, 70, 229, 0.4),
-            0 0 0 6px rgba(79, 70, 229, 0.15) !important;
-    }
-
-    /* Form Submit Button 样式覆盖 */
-    button[data-testid="stFormSubmitButton"] {
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
-        border: none !important;
-        color: white !important;
-        font-weight: 600 !important;
-        border-radius: 12px !important;
-        padding: 0.75rem 1.5rem !important;
-        box-shadow: 
-            0 4px 16px rgba(79, 70, 229, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    button[data-testid="stFormSubmitButton"]:hover {
-        background: linear-gradient(135deg, #4338ca 0%, #5b21b6 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 
-            0 8px 24px rgba(79, 70, 229, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
-    }
-
-    button[data-testid="stFormSubmitButton"]:active {
-        transform: translateY(0px) scale(0.98) !important;
-        box-shadow: 
-            0 2px 8px rgba(79, 70, 229, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
     }
 </style>
 """, unsafe_allow_html=True)
