@@ -2959,7 +2959,7 @@ elif page == "系统设置":
         st.stop()
 
     # 包含故障转移配置的标签页
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["思考模式", "提示词注入", "流式模式", "故障转移", "负载均衡", "自动清理", "系统信息"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["思考模式", "提示词注入", "流式模式", "负载均衡", "故障转移", "自动清理", "系统信息"])
 
     with tab1:
         st.markdown("#### 思考模式配置")
@@ -3106,7 +3106,96 @@ elif page == "系统设置":
                 else:
                     st.error("保存失败")
 
-    with tab5:  # 故障转移配置标签页
+    with tab4:
+        st.markdown("#### ⚖️ 负载均衡策略")
+        st.markdown("优化 API Key 选择策略")
+
+        # 获取当前策略
+        all_configs = call_api('/admin/config')
+        current_strategy = 'adaptive'
+
+        if all_configs and all_configs.get('success'):
+            system_configs = all_configs.get('system_configs', [])
+            for config in system_configs:
+                if config['key'] == 'load_balance_strategy':
+                    current_strategy = config['value']
+                    break
+
+        with st.form("load_balance_form"):
+            strategy_options = {
+                'adaptive': '自适应策略',
+                'least_used': '最少使用策略',
+                'round_robin': '轮流使用策略'
+            }
+
+            selected_strategy = st.selectbox(
+                "选择负载均衡策略",
+                options=list(strategy_options.keys()),
+                format_func=lambda x: strategy_options[x],
+                index=list(strategy_options.keys()).index(current_strategy)
+            )
+
+            # 策略说明
+            if selected_strategy == 'adaptive':
+                st.info("🧠 **自适应策略**: 根据Key的健康状态和性能自动选择最优Key")
+            elif selected_strategy == 'least_used':
+                st.info("📊 **最少使用策略**: 优先选择使用次数最少的Key")
+            elif selected_strategy == 'round_robin':
+                st.info("🔄 **轮流使用策略**: 按顺序轮流使用所有可用Key")
+
+            if st.form_submit_button("保存策略", type="primary", use_container_width=True):
+                result = call_api('/admin/config', 'POST', {
+                    'load_balance_strategy': selected_strategy
+                })
+                if result and result.get('success'):
+                    st.success(f"策略已更新为: {strategy_options[selected_strategy]}")
+                    st.cache_data.clear()
+                    time.sleep(1)
+                    st.rerun()
+
+    with tab5:
+        st.markdown("#### ⚖️ 负载均衡策略")
+        st.markdown("优化 API Key 选择策略")
+
+        # 获取当前策略
+        all_configs = call_api('/admin/config')
+        current_strategy = 'adaptive'
+
+        if all_configs and all_configs.get('success'):
+            system_configs = all_configs.get('system_configs', [])
+            for config in system_configs:
+                if config['key'] == 'load_balance_strategy':
+                    current_strategy = config['value']
+                    break
+
+        with st.form("load_balance_form"):
+            strategy_options = {
+                'adaptive': '自适应策略',
+                'least_used': '最少使用策略',
+                'round_robin': '轮流使用策略'
+            }
+
+            strategy_descriptions = {
+                'adaptive': '根据成功率和响应时间智能选择',
+                'least_used': '优先使用请求最少的密钥',
+                'round_robin': '按顺序轮流使用'
+            }
+
+            strategy = st.selectbox(
+                "选择策略",
+                options=list(strategy_options.keys()),
+                format_func=lambda x: strategy_options[x],
+                index=list(strategy_options.keys()).index(current_strategy)
+            )
+
+            st.info(strategy_descriptions[strategy])
+
+            if st.form_submit_button("保存策略", type="primary", use_container_width=True):
+                st.success(f"策略已更新为: {strategy_options[strategy]}")
+
+
+
+    with tab4:  # 故障转移配置标签页
         st.markdown("#### ⚡ 快速故障转移配置")
         st.markdown("配置智能故障转移策略，优化请求处理和错误恢复机制")
 
@@ -3303,105 +3392,6 @@ elif page == "系统设置":
                 if refresh_stats:
                     st.cache_data.clear()
                     st.rerun()
-
-            # === 统计信息和建议 ===
-            if failover_stats_data and failover_stats_data.get('success'):
-                st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
-                st.markdown("##### 📈 性能分析与建议")
-
-                stats = failover_stats_data
-                health_summary = stats.get('health_summary', {})
-                recommendations = stats.get('recommendations', {})
-
-                col1, col2 = st.columns(2)
-
-                with col1:
-                    st.markdown("**Key健康状态分布**")
-                    healthy = health_summary.get('healthy', 0)
-                    unhealthy = health_summary.get('unhealthy', 0)
-                    unknown = health_summary.get('unknown', 0)
-                    total = health_summary.get('total_active', 0)
-
-                    if total > 0:
-                        st.markdown(f"""
-                        - 🟢 健康: {healthy} 个 ({healthy/total*100:.1f}%)
-                        - 🔴 异常: {unhealthy} 个 ({unhealthy/total*100:.1f}%)
-                        - 🟡 未知: {unknown} 个 ({unknown/total*100:.1f}%)
-                        """)
-                    else:
-                        st.warning("⚠️ 暂无激活的Key")
-
-                with col2:
-                    st.markdown("**智能建议**")
-                    optimal_attempts = recommendations.get('optimal_max_attempts', 5)
-                    fast_recommended = recommendations.get('fast_failover_recommended', True)
-                    bg_recommended = recommendations.get('background_check_recommended', True)
-
-                    if fast_recommended:
-                        st.success("✅ 建议启用快速故障转移")
-                    else:
-                        st.info("ℹ️ 当前Key状态良好，可使用传统模式")
-
-                    st.info(f"💡 建议最大尝试次数: {optimal_attempts}")
-
-                    if bg_recommended:
-                        st.success("✅ 建议启用后台健康检测")
-
-                # 配置对比
-                with st.expander("🔍 查看详细配置对比"):
-                    st.markdown("""
-                    | 配置项 | 快速模式 | 传统模式 |
-                    |--------|----------|----------|
-                    | **响应速度** | ⚡ 最快 | 🐢 较慢 |
-                    | **资源消耗** | 💚 低 | 🔴 高 |
-                    | **错误恢复** | ⚡ 立即切换 | 🔄 多次重试 |
-                    | **适用场景** | 高并发生产环境 | 网络不稳定环境 |
-                    | **推荐指数** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-
-                    **详细说明：**
-                    - **快速模式**：Key失败立即切换，无重试，适合生产环境
-                    - **传统模式**：使用传统重试机制，稳定但较慢
-                    """)
-
-    with tab4:
-        st.markdown("#### ⚖️ 负载均衡策略")
-        st.markdown("优化 API Key 选择策略")
-
-        # 获取当前策略
-        all_configs = call_api('/admin/config')
-        current_strategy = 'adaptive'
-
-        if all_configs and all_configs.get('success'):
-            system_configs = all_configs.get('system_configs', [])
-            for config in system_configs:
-                if config['key'] == 'load_balance_strategy':
-                    current_strategy = config['value']
-                    break
-
-        with st.form("load_balance_form"):
-            strategy_options = {
-                'adaptive': '自适应策略',
-                'least_used': '最少使用策略',
-                'round_robin': '轮流使用策略'
-            }
-
-            strategy_descriptions = {
-                'adaptive': '根据成功率和响应时间智能选择',
-                'least_used': '优先使用请求最少的密钥',
-                'round_robin': '按顺序轮流使用'
-            }
-
-            strategy = st.selectbox(
-                "选择策略",
-                options=list(strategy_options.keys()),
-                format_func=lambda x: strategy_options[x],
-                index=list(strategy_options.keys()).index(current_strategy)
-            )
-
-            st.info(strategy_descriptions[strategy])
-
-            if st.form_submit_button("保存策略", type="primary", use_container_width=True):
-                st.success(f"策略已更新为: {strategy_options[strategy]}")
 
     with tab6:  # 自动清理标签页
         st.markdown("#### 🧹 自动清理异常API Key")
