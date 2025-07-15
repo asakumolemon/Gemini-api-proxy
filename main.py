@@ -262,11 +262,11 @@ st.markdown("""
 
     /* 页面背景 */
     .stApp {
-        background: linear-gradient(135deg, 
-            #e0e7ff 0%, 
-            #f3e8ff 25%, 
-            #fce7f3 50%, 
-            #fef3c7 75%, 
+        background: linear-gradient(135deg,
+            #e0e7ff 0%,
+            #f3e8ff 25%,
+            #fce7f3 50%,
+            #fef3c7 75%,
             #dbeafe 100%
         );
         background-size: 400% 400%;
@@ -288,7 +288,7 @@ st.markdown("""
         -webkit-backdrop-filter: blur(20px);
         border-radius: 24px;
         border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 
+        box-shadow:
             0 20px 60px rgba(0, 0, 0, 0.05),
             0 8px 32px rgba(0, 0, 0, 0.03),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
@@ -422,9 +422,9 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.6) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.6) 50%,
             transparent
         );
     }
@@ -439,7 +439,7 @@ st.markdown("""
         padding: 1.5rem;
         margin-bottom: 1.5rem;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 
+        box-shadow:
             0 10px 32px rgba(0, 0, 0, 0.06),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
         position: relative;
@@ -453,16 +453,16 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.8) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.8) 50%,
             transparent
         );
     }
 
     .unified-card:hover {
         transform: translateY(-2px) scale(1.005);
-        box-shadow: 
+        box-shadow:
             0 16px 48px rgba(0, 0, 0, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.6);
         border-color: rgba(255, 255, 255, 0.6);
@@ -609,7 +609,7 @@ st.markdown("""
 
     /* 侧边栏设计 */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(135deg, 
+        background: linear-gradient(135deg,
             rgba(99, 102, 241, 0.12) 0%,
             rgba(168, 85, 247, 0.08) 25%,
             rgba(59, 130, 246, 0.1) 50%,
@@ -619,7 +619,7 @@ st.markdown("""
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         border-right: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 
+        box-shadow:
             4px 0 32px rgba(0, 0, 0, 0.08),
             0 0 0 1px rgba(255, 255, 255, 0.08) inset;
         position: relative;
@@ -650,7 +650,7 @@ st.markdown("""
         left: 0;
         right: 0;
         bottom: 0;
-        background: 
+        background:
             radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.2) 0%, transparent 50%),
             radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
             radial-gradient(circle at 40% 60%, rgba(59, 130, 246, 0.18) 0%, transparent 50%);
@@ -687,7 +687,7 @@ st.markdown("""
         -webkit-backdrop-filter: blur(20px);
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 
+        box-shadow:
             0 12px 40px rgba(0, 0, 0, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
         position: relative;
@@ -723,9 +723,9 @@ st.markdown("""
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.15) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.15) 50%,
             transparent
         );
         transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -733,7 +733,7 @@ st.markdown("""
 
     .sidebar-logo:hover {
         transform: translateY(-2px) scale(1.02);
-        box-shadow: 
+        box-shadow:
             0 16px 48px rgba(0, 0, 0, 0.12),
             inset 0 1px 0 rgba(255, 255, 255, 0.25);
         background: rgba(255, 255, 255, 0.12);
@@ -779,11 +779,11 @@ st.markdown("""
     /* 玻璃分割线 */
     .sidebar-divider {
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.25) 20%, 
-            rgba(255, 255, 255, 0.5) 50%, 
-            rgba(255, 255, 255, 0.25) 80%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.25) 20%,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(255, 255, 255, 0.25) 80%,
             transparent
         );
         margin: 1.5rem 0;
@@ -804,9 +804,9 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.15) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.15) 50%,
             transparent
         );
     }
@@ -840,8 +840,8 @@ st.markdown("""
         left: 1rem;
         right: 1rem;
         height: 1px;
-        background: linear-gradient(90deg, 
-            rgba(255, 255, 255, 0.25), 
+        background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.25),
             rgba(255, 255, 255, 0.08)
         );
     }
@@ -890,7 +890,7 @@ st.markdown("""
         box-sizing: border-box !important;
         overflow: hidden !important;
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
-        box-shadow: 
+        box-shadow:
             0 4px 16px rgba(0, 0, 0, 0.06),
             inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
         -webkit-tap-highlight-color: transparent !important; /* 移除iOS点击高亮 */
@@ -913,8 +913,8 @@ st.markdown("""
         inset: 0;
         border-radius: 16px;
         padding: 1px;
-        background: linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.25) 0%, 
+        background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.25) 0%,
             rgba(255, 255, 255, 0.08) 25%,
             transparent 50%,
             rgba(255, 255, 255, 0.08) 75%,
@@ -934,7 +934,7 @@ st.markdown("""
         color: white !important;
         transform: translateX(6px) translateY(-2px) !important;
         border-color: rgba(255, 255, 255, 0.2) !important;
-        box-shadow: 
+        box-shadow:
             0 12px 32px rgba(0, 0, 0, 0.1),
             0 4px 16px rgba(99, 102, 241, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
@@ -958,8 +958,8 @@ st.markdown("""
 
     /* 选中状态玻璃效果 */
     section[data-testid="stSidebar"] .stRadio input[type="radio"]:checked + label {
-        background: linear-gradient(135deg, 
-            rgba(99, 102, 241, 0.3) 0%, 
+        background: linear-gradient(135deg,
+            rgba(99, 102, 241, 0.3) 0%,
             rgba(168, 85, 247, 0.25) 50%,
             rgba(99, 102, 241, 0.3) 100%
         ) !important;
@@ -968,7 +968,7 @@ st.markdown("""
         color: white !important;
         font-weight: 600 !important;
         border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        box-shadow: 
+        box-shadow:
             0 12px 40px rgba(99, 102, 241, 0.25),
             0 6px 20px rgba(0, 0, 0, 0.1),
             inset 0 1px 0 rgba(255, 255, 255, 0.25),
@@ -992,25 +992,25 @@ st.markdown("""
         width: 4px;
         height: 100%;
         border-radius: 0 2px 2px 0;
-        background: linear-gradient(180deg, 
-            #6366f1 0%, 
+        background: linear-gradient(180deg,
+            #6366f1 0%,
             #a855f7 50%,
             #6366f1 100%
         );
-        box-shadow: 
+        box-shadow:
             0 0 16px rgba(99, 102, 241, 1),
             0 0 32px rgba(99, 102, 241, 0.6);
         animation: glow-pulse 2s ease-in-out infinite;
     }
 
     @keyframes glow-pulse {
-        0%, 100% { 
-            box-shadow: 
+        0%, 100% {
+            box-shadow:
                 0 0 16px rgba(99, 102, 241, 1),
                 0 0 32px rgba(99, 102, 241, 0.6);
         }
-        50% { 
-            box-shadow: 
+        50% {
+            box-shadow:
                 0 0 24px rgba(99, 102, 241, 1),
                 0 0 48px rgba(99, 102, 241, 0.8),
                 0 0 64px rgba(99, 102, 241, 0.4);
@@ -1043,7 +1043,7 @@ st.markdown("""
         border-radius: 16px;
         padding: 1.25rem;
         margin-bottom: 1rem;
-        box-shadow: 
+        box-shadow:
             0 8px 24px rgba(0, 0, 0, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.12);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1067,9 +1067,9 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.4) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.4) 50%,
             transparent
         );
     }
@@ -1078,7 +1078,7 @@ st.markdown("""
         background: rgba(255, 255, 255, 0.12);
         border-color: rgba(255, 255, 255, 0.2);
         transform: translateY(-2px);
-        box-shadow: 
+        box-shadow:
             0 12px 32px rgba(0, 0, 0, 0.12),
             inset 0 1px 0 rgba(255, 255, 255, 0.18);
     }
@@ -1123,7 +1123,7 @@ st.markdown("""
 
     .sidebar-status-indicator.online {
         background: #10b981;
-        box-shadow: 
+        box-shadow:
             0 0 16px rgba(16, 185, 129, 0.8),
             0 0 0 2px rgba(255, 255, 255, 0.25);
         animation: online-pulse 2s ease-in-out infinite;
@@ -1131,19 +1131,19 @@ st.markdown("""
 
     .sidebar-status-indicator.offline {
         background: #ef4444;
-        box-shadow: 
+        box-shadow:
             0 0 16px rgba(239, 68, 68, 0.8),
             0 0 0 2px rgba(255, 255, 255, 0.25);
     }
 
     @keyframes online-pulse {
-        0%, 100% { 
-            box-shadow: 
+        0%, 100% {
+            box-shadow:
                 0 0 16px rgba(16, 185, 129, 0.8),
                 0 0 0 2px rgba(255, 255, 255, 0.25);
         }
-        50% { 
-            box-shadow: 
+        50% {
+            box-shadow:
                 0 0 24px rgba(16, 185, 129, 1),
                 0 0 40px rgba(16, 185, 129, 0.6),
                 0 0 0 2px rgba(255, 255, 255, 0.35);
@@ -1187,9 +1187,9 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.25) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.25) 50%,
             transparent
         );
     }
@@ -1234,7 +1234,7 @@ st.markdown("""
         border-radius: 6px;
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
-        -webkit-tap-highlight-color: transparent; 
+        -webkit-tap-highlight-color: transparent;
     }
 
     .sidebar-footer-link:hover {
@@ -1268,13 +1268,13 @@ st.markdown("""
         color: #4f46e5;
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        box-shadow: 
+        box-shadow:
             0 8px 24px rgba(99, 102, 241, 0.15),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
         position: relative;
         overflow: hidden;
-        -webkit-tap-highlight-color: transparent; 
-        min-height: 44px; 
+        -webkit-tap-highlight-color: transparent;
+        min-height: 44px;
     }
 
     .stButton > button::before {
@@ -1284,9 +1284,9 @@ st.markdown("""
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.3) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3) 50%,
             transparent
         );
         transition: left 0.6s ease;
@@ -1295,7 +1295,7 @@ st.markdown("""
     .stButton > button:hover {
         background: rgba(99, 102, 241, 0.2);
         transform: translateY(-3px) scale(1.02);
-        box-shadow: 
+        box-shadow:
             0 12px 36px rgba(99, 102, 241, 0.25),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
         border-color: rgba(99, 102, 241, 0.4);
@@ -1335,11 +1335,11 @@ st.markdown("""
         font-size: 0.9375rem !important;
         padding: 0.875rem 1.25rem !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 
+        box-shadow:
             0 8px 24px rgba(0, 0, 0, 0.05),
             inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
         color: #1f2937 !important;
-        min-height: 44px !important; 
+        min-height: 44px !important;
     }
 
     .stTextInput > div > div > input::placeholder,
@@ -1353,7 +1353,7 @@ st.markdown("""
     .stTextArea > div > div > textarea:focus {
         background: rgba(255, 255, 255, 0.8) !important;
         border-color: rgba(99, 102, 241, 0.5) !important;
-        box-shadow: 
+        box-shadow:
             0 0 0 3px rgba(99, 102, 241, 0.1),
             0 12px 32px rgba(0, 0, 0, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
@@ -1386,7 +1386,7 @@ st.markdown("""
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 
+        box-shadow:
             0 6px 20px rgba(0, 0, 0, 0.06),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1404,7 +1404,7 @@ st.markdown("""
 
     .status-indicator:hover {
         transform: translateY(-2px) scale(1.05);
-        box-shadow: 
+        box-shadow:
             0 12px 32px rgba(0, 0, 0, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
@@ -1456,7 +1456,7 @@ st.markdown("""
         padding: 1.25rem;
         margin: 0.75rem 0;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 
+        box-shadow:
             0 10px 32px rgba(0, 0, 0, 0.06),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
         position: relative;
@@ -1479,16 +1479,16 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.8) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.8) 50%,
             transparent
         );
     }
 
     div[data-testid="stHorizontalBlock"]:hover {
         transform: translateY(-3px) scale(1.01);
-        box-shadow: 
+        box-shadow:
             0 16px 48px rgba(0, 0, 0, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.6);
         border-color: rgba(255, 255, 255, 0.6);
@@ -1516,7 +1516,7 @@ st.markdown("""
         text-overflow: ellipsis;
         border: 1px solid rgba(255, 255, 255, 0.4);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        word-break: break-all; 
+        word-break: break-all;
     }
 
     /* 移动端密钥代码调整 */
@@ -1568,10 +1568,10 @@ st.markdown("""
         border-radius: 16px 16px 0 0;
         border: 1px solid rgba(255, 255, 255, 0.4);
         border-bottom: none;
-        box-shadow: 
+        box-shadow:
             0 4px 16px rgba(0, 0, 0, 0.04),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
-        overflow-x: auto; 
+        overflow-x: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -1592,9 +1592,9 @@ st.markdown("""
         background: transparent;
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
-        white-space: nowrap; 
+        white-space: nowrap;
         min-width: auto;
-        flex-shrink: 0; 
+        flex-shrink: 0;
     }
 
     .stTabs [data-testid="stTabBar"] button:hover {
@@ -1618,7 +1618,7 @@ st.markdown("""
         color: #1f2937;
         border-bottom-color: #6366f1;
         background: rgba(255, 255, 255, 0.5);
-        box-shadow: 
+        box-shadow:
             0 -4px 12px rgba(99, 102, 241, 0.15),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
@@ -1630,7 +1630,7 @@ st.markdown("""
         -webkit-backdrop-filter: blur(12px) !important;
         border-radius: 14px !important;
         border: 1px solid rgba(255, 255, 255, 0.4) !important;
-        box-shadow: 
+        box-shadow:
             0 8px 24px rgba(0, 0, 0, 0.06),
             inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
         padding: 1rem 1.25rem !important;
@@ -1669,11 +1669,11 @@ st.markdown("""
         -webkit-backdrop-filter: blur(16px);
         background: rgba(255, 255, 255, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 
+        box-shadow:
             0 12px 40px rgba(0, 0, 0, 0.05),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
         pointer-events: none;
-        user-select: none; 
+        user-select: none;
     }
 
     /* 禁用图表内部元素的交互 */
@@ -1701,7 +1701,7 @@ st.markdown("""
         -webkit-backdrop-filter: blur(12px);
         background: rgba(255, 255, 255, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 
+        box-shadow:
             0 8px 32px rgba(0, 0, 0, 0.05),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
@@ -1770,7 +1770,6 @@ st.markdown("""
         margin-bottom: 1rem;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid rgba(99, 102, 241, 0.2);
-        background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
         padding-left: 1rem;
         border-radius: 8px;
     }
@@ -1789,11 +1788,11 @@ st.markdown("""
         margin: 1.5rem 0 !important;
         border: none !important;
         height: 1px !important;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(99, 102, 241, 0.3) 20%, 
-            rgba(99, 102, 241, 0.5) 50%, 
-            rgba(99, 102, 241, 0.3) 80%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(99, 102, 241, 0.3) 20%,
+            rgba(99, 102, 241, 0.5) 50%,
+            rgba(99, 102, 241, 0.3) 80%,
             transparent
         ) !important;
         position: relative;
@@ -1813,9 +1812,9 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.3) 50%, 
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3) 50%,
             transparent
         );
     }
@@ -1889,7 +1888,7 @@ st.markdown("""
             -webkit-backdrop-filter: blur(12px) !important;
             border: 1px solid rgba(99, 102, 241, 0.3) !important;
             border-radius: 12px !important;
-            box-shadow: 
+            box-shadow:
                 0 4px 16px rgba(99, 102, 241, 0.15),
                 inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
             color: #4f46e5 !important;
@@ -1955,7 +1954,7 @@ st.markdown("""
         border-radius: 16px;
         padding: 1.25rem;
         margin-bottom: 1rem;
-        box-shadow: 
+        box-shadow:
             0 10px 32px rgba(0, 0, 0, 0.06),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
@@ -2104,7 +2103,7 @@ if page == "控制台":
     st.markdown('</div>', unsafe_allow_html=True)
 
     # 核心指标
-    st.markdown('<h3 class="section-title">核心指标</h3>', unsafe_allow_html=True)
+    st.markdown('<h3>核心指标</h3>', unsafe_allow_html=True)
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -2632,7 +2631,7 @@ response = client.chat.completions.create(
                             <div>
                                 <div class="key-code">{mask_key(key_info['key'], show_full_user_keys)}</div>
                                 <div class="key-meta">
-                                    {f"名称: {key_info['name']}" if key_info.get('name') else "未命名"} · 
+                                    {f"名称: {key_info['name']}" if key_info.get('name') else "未命名"} ·
                                     {f"最后使用: {key_info['last_used'][:16]}" if key_info.get('last_used') else "从未使用"}
                                 </div>
                             </div>
@@ -3305,7 +3304,7 @@ elif page == "系统设置":
 st.markdown(
     f"""
     <div style='text-align: center; color: rgba(255, 255, 255, 0.7); font-size: 0.8125rem; margin-top: 4rem; padding: 2rem 0; border-top: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(255, 255, 255, 0.05); border-radius: 16px 16px 0 0; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);'>
-        <a href='{API_BASE_URL}/health' target='_blank' style='color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: all 0.3s ease; padding: 0.25rem 0.5rem; border-radius: 6px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);' onmouseover='this.style.color="white"; this.style.background="rgba(255, 255, 255, 0.1)"; this.style.textShadow="0 0 8px rgba(255, 255, 255, 0.5)";' onmouseout='this.style.color="rgba(255, 255, 255, 0.8)"; this.style.background="transparent"; this.style.textShadow="none";'>健康检查</a> · 
+        <a href='{API_BASE_URL}/health' target='_blank' style='color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: all 0.3s ease; padding: 0.25rem 0.5rem; border-radius: 6px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);' onmouseover='this.style.color="white"; this.style.background="rgba(255, 255, 255, 0.1)"; this.style.textShadow="0 0 8px rgba(255, 255, 255, 0.5)";' onmouseout='this.style.color="rgba(255, 255, 255, 0.8)"; this.style.background="transparent"; this.style.textShadow="none";'>健康检查</a> ·
         <span style='color: rgba(255, 255, 255, 0.6);'>{API_BASE_URL}</span> ·
         <span style='color: rgba(255, 255, 255, 0.6);'>v1.3</span>
     </div>
