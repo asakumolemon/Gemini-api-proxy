@@ -187,7 +187,6 @@ def get_cached_failover_stats():
     """获取缓存的故障转移统计"""
     return get_failover_stats()
 
-
 # --- 密钥管理函数 ---
 def mask_key(key: str, show_full: bool = False) -> str:
     """密钥掩码处理"""
@@ -244,8 +243,7 @@ def format_health_status(health_status: str) -> str:
     }
     return status_map.get(health_status, health_status)
 
-
-# --- 统一设计风格CSS ---
+# --- 玻璃拟态风格CSS ---
 st.markdown("""
 <style>
     /* 移动端检测脚本 */
@@ -440,59 +438,6 @@ st.markdown("""
         );
     }
 
-    /* 统一卡片样式 */
-    .unified-card {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 
-            0 10px 32px rgba(0, 0, 0, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .unified-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(255, 255, 255, 0.8) 50%, 
-            transparent
-        );
-    }
-
-    .unified-card:hover {
-        transform: translateY(-2px) scale(1.005);
-        box-shadow: 
-            0 16px 48px rgba(0, 0, 0, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.6);
-        border-color: rgba(255, 255, 255, 0.6);
-        background: rgba(255, 255, 255, 0.5);
-    }
-
-    /* 移动端卡片优化 */
-    @media (max-width: 768px) {
-        .unified-card {
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 14px;
-        }
-
-        .unified-card:hover {
-            transform: translateY(-1px) scale(1.01);
-        }
-    }
-
     /* 度量卡片玻璃效果 */
     [data-testid="metric-container"] {
         background: rgba(255, 255, 255, 0.4);
@@ -627,11 +572,11 @@ st.markdown("""
         }
 
         /* 状态标签保留动画 */
-        .status-indicator:hover {
+        .status-badge:hover {
             transform: translateY(-1px) scale(1.02);
         }
 
-        .status-indicator:active {
+        .status-badge:active {
             transform: scale(0.98);
             transition: transform 0.1s ease;
         }
@@ -1315,21 +1260,20 @@ st.markdown("""
 
     /* 按钮玻璃效果 */
     .stButton > button {
-        border-radius: 16px;
+        border-radius: 14px;
         font-weight: 500;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(99, 102, 241, 0.3);
         font-size: 0.9375rem;
         padding: 0.75rem 1.5rem;
         letter-spacing: 0.02em;
-        background: rgba(255, 255, 255, 0.2);
-        color: #1f2937;
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        background: rgba(99, 102, 241, 0.1);
+        color: #4f46e5;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         box-shadow: 
-            0 8px 24px rgba(0, 0, 0, 0.08),
-            0 4px 12px rgba(0, 0, 0, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            0 8px 24px rgba(99, 102, 241, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
         position: relative;
         overflow: hidden;
         -webkit-tap-highlight-color: transparent; 
@@ -1352,62 +1296,13 @@ st.markdown("""
     }
 
     .stButton > button:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px) scale(1.02);
+        background: rgba(99, 102, 241, 0.2);
+        transform: translateY(-3px) scale(1.02);
         box-shadow: 
-            0 12px 32px rgba(0, 0, 0, 0.12),
-            0 6px 16px rgba(0, 0, 0, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.6);
-        border-color: rgba(255, 255, 255, 0.5);
-        color: #111827;
-    }
-
-    /* 主要按钮样式 */
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, 
-            rgba(99, 102, 241, 0.4) 0%, 
-            rgba(168, 85, 247, 0.35) 50%,
-            rgba(99, 102, 241, 0.4) 100%
-        );
-        border: 1px solid rgba(99, 102, 241, 0.4);
-        color: #1f2937;
-        box-shadow: 
-            0 8px 24px rgba(99, 102, 241, 0.25),
-            0 4px 12px rgba(99, 102, 241, 0.15),
+            0 12px 36px rgba(99, 102, 241, 0.25),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-
-    .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, 
-            rgba(99, 102, 241, 0.5) 0%, 
-            rgba(168, 85, 247, 0.45) 50%,
-            rgba(99, 102, 241, 0.5) 100%
-        );
-        border-color: rgba(99, 102, 241, 0.5);
-        box-shadow: 
-            0 12px 32px rgba(99, 102, 241, 0.3),
-            0 6px 16px rgba(99, 102, 241, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.6);
-        color: #111827;
-    }
-
-    /* 次要按钮样式 */
-    .stButton > button[kind="secondary"] {
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: #4b5563;
-        box-shadow: 
-            0 6px 20px rgba(0, 0, 0, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.4);
-    }
-
-    .stButton > button[kind="secondary"]:hover {
-        background: rgba(255, 255, 255, 0.25);
-        border-color: rgba(255, 255, 255, 0.4);
-        color: #374151;
-        box-shadow: 
-            0 10px 28px rgba(0, 0, 0, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        border-color: rgba(99, 102, 241, 0.4);
+        color: #4338ca;
     }
 
     /* 按钮 */
@@ -1420,24 +1315,6 @@ st.markdown("""
             transform: scale(0.98);
             transition: transform 0.1s ease;
         }
-
-        .stButton > button[kind="primary"]:hover {
-            transform: none;
-        }
-
-        .stButton > button[kind="primary"]:active {
-            transform: scale(0.98);
-            transition: transform 0.1s ease;
-        }
-
-        .stButton > button[kind="secondary"]:hover {
-            transform: none;
-        }
-
-        .stButton > button[kind="secondary"]:active {
-            transform: scale(0.98);
-            transition: transform 0.1s ease;
-        }
     }
 
     .stButton > button:hover::before {
@@ -1446,21 +1323,6 @@ st.markdown("""
 
     .stButton > button:active {
         transform: translateY(-1px) scale(0.98);
-    }
-
-    .stButton > button[kind="primary"]:active {
-        transform: translateY(-1px) scale(0.98);
-        box-shadow: 
-            0 6px 20px rgba(99, 102, 241, 0.4),
-            0 3px 8px rgba(99, 102, 241, 0.25),
-            inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    }
-
-    .stButton > button[kind="secondary"]:active {
-        transform: translateY(-1px) scale(0.98);
-        box-shadow: 
-            0 4px 16px rgba(0, 0, 0, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
     /* 输入框 */
@@ -1512,108 +1374,8 @@ st.markdown("""
         }
     }
 
-    /* 滑动条玻璃效果 */
-    .stSlider {
-        padding: 0.5rem 0;
-    }
-
-    .stSlider > div > div {
-        background: rgba(255, 255, 255, 0.4) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border-radius: 20px !important;
-        height: 12px !important;
-        border: 1px solid rgba(255, 255, 255, 0.5) !important;
-        box-shadow: 
-            0 4px 16px rgba(0, 0, 0, 0.04),
-            inset 0 2px 0 rgba(255, 255, 255, 0.3),
-            inset 0 -2px 0 rgba(0, 0, 0, 0.05) !important;
-    }
-
-    .stSlider > div > div > div > div {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%) !important;
-        border-radius: 20px !important;
-        height: 12px !important;
-        box-shadow: 
-            0 0 20px rgba(99, 102, 241, 0.4),
-            0 4px 12px rgba(99, 102, 241, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stSlider > div > div > div > div::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(90deg, 
-            transparent 0%, 
-            rgba(255, 255, 255, 0.3) 50%, 
-            transparent 100%
-        );
-        animation: slider-shimmer 2s ease-in-out infinite;
-    }
-
-    @keyframes slider-shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
-
-    /* 滑动条手柄 */
-    .stSlider > div > div > div > div[role="slider"] {
-        background: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        border: 2px solid rgba(99, 102, 241, 0.4) !important;
-        border-radius: 50% !important;
-        width: 24px !important;
-        height: 24px !important;
-        box-shadow: 
-            0 8px 24px rgba(99, 102, 241, 0.3),
-            0 4px 12px rgba(0, 0, 0, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        cursor: pointer !important;
-    }
-
-    .stSlider > div > div > div > div[role="slider"]:hover {
-        transform: scale(1.15) !important;
-        border-color: rgba(99, 102, 241, 0.6) !important;
-        box-shadow: 
-            0 12px 32px rgba(99, 102, 241, 0.4),
-            0 6px 16px rgba(0, 0, 0, 0.15),
-            inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
-    }
-
-    .stSlider > div > div > div > div[role="slider"]:active {
-        transform: scale(1.05) !important;
-        box-shadow: 
-            0 6px 20px rgba(99, 102, 241, 0.5),
-            0 3px 8px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-    }
-
-    /* 移动端滑动条优化 */
-    @media (max-width: 768px) {
-        .stSlider > div > div > div > div[role="slider"] {
-            width: 28px !important;
-            height: 28px !important;
-        }
-
-        .stSlider > div > div > div > div[role="slider"]:hover {
-            transform: none !important;
-        }
-
-        .stSlider > div > div > div > div[role="slider"]:active {
-            transform: scale(1.1) !important;
-        }
-    }
-
-    /* 统一状态指示器样式 */
-    .status-indicator {
+    /* 健康状态标签玻璃效果 */
+    .status-badge {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1635,7 +1397,7 @@ st.markdown("""
 
     /* 移动端状态标签调整 */
     @media (max-width: 768px) {
-        .status-indicator {
+        .status-badge {
             padding: 0.375rem 0.75rem;
             font-size: 0.75rem;
             min-width: 3rem;
@@ -1643,7 +1405,7 @@ st.markdown("""
         }
     }
 
-    .status-indicator:hover {
+    .status-badge:hover {
         transform: translateY(-2px) scale(1.05);
         box-shadow: 
             0 12px 32px rgba(0, 0, 0, 0.08),
@@ -1652,7 +1414,7 @@ st.markdown("""
 
     /* 移动端禁用状态标签悬停 */
     @media (max-width: 768px) {
-        .status-indicator:hover {
+        .status-badge:hover {
             transform: none;
         }
     }
@@ -2003,27 +1765,6 @@ st.markdown("""
         }
     }
 
-    /* 分节标题 */
-    .section-title {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid rgba(99, 102, 241, 0.2);
-        padding-left: 0.5rem;
-        border-radius: 8px;
-    }
-
-    /* 移动端分节标题调整 */
-    @media (max-width: 768px) {
-        .section-title {
-            font-size: 1rem;
-            padding-left: 0.25rem;
-            padding-bottom: 0.375rem;
-        }
-    }
-
     /* 分割线玻璃效果 */
     hr {
         margin: 1.5rem 0 !important;
@@ -2124,25 +1865,17 @@ st.markdown("""
     @media (max-width: 768px) {
         /* 侧边栏切换按钮样式 */
         button[kind="secondary"] {
-            background: rgba(255, 255, 255, 0.2) !important;
+            background: rgba(99, 102, 241, 0.1) !important;
             backdrop-filter: blur(12px) !important;
             -webkit-backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            border: 1px solid rgba(99, 102, 241, 0.3) !important;
             border-radius: 12px !important;
             box-shadow: 
-                0 4px 16px rgba(0, 0, 0, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
-            color: #374151 !important;
+                0 4px 16px rgba(99, 102, 241, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+            color: #4f46e5 !important;
             font-weight: 500 !important;
             min-height: 44px !important;
-        }
-
-        button[kind="secondary"]:hover {
-            background: rgba(255, 255, 255, 0.3) !important;
-            border-color: rgba(255, 255, 255, 0.5) !important;
-            box-shadow: 
-                0 6px 20px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
         }
     }
 
@@ -2212,7 +1945,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 # --- 获取服务状态函数 ---
 @st.cache_data(ttl=10)
 def get_service_status():
@@ -2229,7 +1961,6 @@ def get_service_status():
     except:
         pass
     return {'online': False, 'active_keys': 0, 'healthy_keys': 0}
-
 
 # --- 玻璃拟态侧边栏 ---
 with st.sidebar:
@@ -2354,7 +2085,7 @@ if page == "控制台":
     st.markdown('</div>', unsafe_allow_html=True)
 
     # 核心指标
-    st.markdown('<h3 class="section-title">核心指标</h3>', unsafe_allow_html=True)
+    st.markdown("### 核心指标")
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -2384,7 +2115,7 @@ if page == "控制台":
         st.metric("思考功能", thinking_status)
 
     # 使用率分析
-    st.markdown('<h3 class="section-title">使用率分析</h3>', unsafe_allow_html=True)
+    st.markdown("### 使用率分析")
 
     usage_stats = stats_data.get('usage_stats', {})
     if usage_stats and models:
@@ -2511,91 +2242,6 @@ if page == "控制台":
     else:
         st.info("暂无使用数据")
 
-elif page == "模型配置":
-    st.title("模型配置")
-    st.markdown('<p class="page-subtitle">调整模型参数和使用限制</p>', unsafe_allow_html=True)
-
-    stats_data = get_cached_stats()
-    status_data = get_cached_status()
-
-    if not stats_data or not status_data:
-        st.error("无法获取数据")
-        st.stop()
-
-    models = status_data.get('models', [])
-    if not models:
-        st.warning("暂无可用模型")
-        st.stop()
-
-    # 信息提示
-    st.info('显示的限制针对单个 API Key，总限制会根据健康密钥数量自动倍增')
-
-    for model in models:
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown(f'<h3 class="section-title">{model}</h3>', unsafe_allow_html=True)
-
-        current_config = get_cached_model_config(model)
-        if not current_config or not current_config.get('success'):
-            st.warning(f"无法加载模型配置")
-            st.markdown('</div>', unsafe_allow_html=True)
-            continue
-
-        with st.form(f"model_config_{model}"):
-            col1, col2, col3, col4 = st.columns(4)
-
-            with col1:
-                rpm = st.number_input(
-                    "RPM (每分钟请求)",
-                    min_value=1,
-                    value=current_config.get('single_api_rpm_limit', 10 if 'flash' in model else 5),
-                    key=f"rpm_{model}"
-                )
-
-            with col2:
-                rpd = st.number_input(
-                    "RPD (每日请求)",
-                    min_value=1,
-                    value=current_config.get('single_api_rpd_limit', 250 if 'flash' in model else 100),
-                    key=f"rpd_{model}"
-                )
-
-            with col3:
-                tpm = st.number_input(
-                    "TPM (每分钟令牌)",
-                    min_value=1000,
-                    value=current_config.get('single_api_tpm_limit', 250000),
-                    key=f"tpm_{model}"
-                )
-
-            with col4:
-                status_options = {1: "激活", 0: "禁用"}
-                current_status = current_config.get('status', 1)
-                new_status = st.selectbox(
-                    "状态",
-                    options=list(status_options.values()),
-                    index=0 if current_status == 1 else 1,
-                    key=f"status_{model}"
-                )
-
-            if st.form_submit_button("保存配置", type="primary", use_container_width=True):
-                update_data = {
-                    "single_api_rpm_limit": rpm,
-                    "single_api_rpd_limit": rpd,
-                    "single_api_tpm_limit": tpm,
-                    "status": 1 if new_status == "激活" else 0
-                }
-
-                result = call_api(f'/admin/models/{model}', 'POST', data=update_data)
-                if result and result.get('success'):
-                    st.success("配置已保存")
-                    st.cache_data.clear()
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error("保存失败")
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
 elif page == "密钥管理":
     st.title("密钥管理")
     st.markdown('<p class="page-subtitle">管理 Gemini API 密钥和用户访问令牌</p>', unsafe_allow_html=True)
@@ -2610,9 +2256,7 @@ elif page == "密钥管理":
     tab1, tab2 = st.tabs(["Gemini 密钥", "用户密钥"])
 
     with tab1:
-        # 添加新密钥
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="section-title">添加新密钥</h4>', unsafe_allow_html=True)
+        st.markdown("#### 添加新密钥")
 
         with st.form("add_gemini_key"):
             new_key = st.text_area(
@@ -2639,18 +2283,18 @@ elif page == "密钥管理":
                             # 创建详细信息展开器
                             with st.expander(f"查看详细结果 (处理了 {total_processed} 个密钥)", expanded=failed > 0):
                                 if successful > 0:
-                                    st.markdown("**成功添加的密钥：**")
+                                    st.markdown("**✅ 成功添加的密钥：**")
                                     success_details = [detail for detail in result.get('details', []) if '✅' in detail]
                                     for detail in success_details:
                                         st.markdown(f"- {detail}")
 
                                 if result.get('duplicate_keys'):
-                                    st.markdown("**重复的密钥：**")
+                                    st.markdown("**⚠️ 重复的密钥：**")
                                     for duplicate in result.get('duplicate_keys', []):
                                         st.warning(f"- {duplicate}")
 
                                 if result.get('invalid_keys'):
-                                    st.markdown("**无效的密钥：**")
+                                    st.markdown("**❌ 无效的密钥：**")
                                     for invalid in result.get('invalid_keys', []):
                                         st.error(f"- {invalid}")
 
@@ -2675,14 +2319,12 @@ elif page == "密钥管理":
                 else:
                     st.error("网络错误，请重试")
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<hr style="margin: 2rem 0;">', unsafe_allow_html=True)
 
         # 现有密钥
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-
         col1, col2, col3 = st.columns([4, 1, 1])
         with col1:
-            st.markdown('<h4 class="section-title">现有密钥</h4>', unsafe_allow_html=True)
+            st.markdown("#### 现有密钥")
         with col2:
             if st.button("健康检测", help="检测所有密钥状态", key="health_check_gemini"):
                 with st.spinner("检测中..."):
@@ -2761,23 +2403,22 @@ elif page == "密钥管理":
                                 ''', unsafe_allow_html=True)
 
                             with col3:
-                                health_status = key_info.get('health_status', 'unknown')
                                 st.markdown(f'''
-                                <span class="status-indicator status-{health_status}">
-                                    {format_health_status(health_status)}
+                                <span class="status-badge status-{key_info.get('health_status', 'unknown')}">
+                                    {format_health_status(key_info.get('health_status', 'unknown'))}
                                 </span>
                                 ''', unsafe_allow_html=True)
 
                             with col4:
-                                status = key_info.get('status', 0)
                                 st.markdown(f'''
-                                <span class="status-indicator status-{'active' if status == 1 else 'inactive'}">
-                                    {'激活' if status == 1 else '禁用'}
+                                <span class="status-badge status-{'active' if key_info.get('status', 0) == 1 else 'inactive'}">
+                                    {'激活' if key_info.get('status', 0) == 1 else '禁用'}
                                 </span>
                                 ''', unsafe_allow_html=True)
 
                             with col5:
                                 key_id = key_info.get('id')
+                                status = key_info.get('status', 0)
                                 if key_id is not None:
                                     toggle_text = "禁用" if status == 1 else "激活"
                                     if st.button(toggle_text, key=f"toggle_g_{key_id}", use_container_width=True):
@@ -2809,12 +2450,8 @@ elif page == "密钥管理":
         else:
             st.error("无法获取密钥列表")
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with tab2:
-        # 生成访问密钥
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="section-title">生成访问密钥</h4>', unsafe_allow_html=True)
+        st.markdown("#### 生成访问密钥")
 
         with st.form("generate_user_key"):
             key_name = st.text_input("密钥名称", placeholder="例如：生产环境、测试环境")
@@ -2846,14 +2483,12 @@ response = client.chat.completions.create(
 
                     st.cache_data.clear()
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<hr style="margin: 2rem 0;">', unsafe_allow_html=True)
 
         # 现有密钥
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-
         col1, col2 = st.columns([4, 1])
         with col1:
-            st.markdown('<h4 class="section-title">现有密钥</h4>', unsafe_allow_html=True)
+            st.markdown("#### 现有密钥")
         with col2:
             show_full_user_keys = st.checkbox("显示完整", key="show_user_full")
 
@@ -2890,7 +2525,7 @@ response = client.chat.completions.create(
 
                         with col3:
                             st.markdown(f'''
-                            <span class="status-indicator status-{'active' if key_info['status'] == 1 else 'inactive'}">
+                            <span class="status-badge status-{'active' if key_info['status'] == 1 else 'inactive'}">
                                 {'激活' if key_info['status'] == 1 else '停用'}
                             </span>
                             ''', unsafe_allow_html=True)
@@ -2915,7 +2550,86 @@ response = client.chat.completions.create(
             else:
                 st.info("暂无用户密钥")
 
-        st.markdown('</div>', unsafe_allow_html=True)
+elif page == "模型配置":
+    st.title("模型配置")
+    st.markdown('<p class="page-subtitle">调整模型参数和使用限制</p>', unsafe_allow_html=True)
+
+    stats_data = get_cached_stats()
+    status_data = get_cached_status()
+
+    if not stats_data or not status_data:
+        st.error("无法获取数据")
+        st.stop()
+
+    models = status_data.get('models', [])
+    if not models:
+        st.warning("暂无可用模型")
+        st.stop()
+
+    # 信息提示
+    st.info('显示的限制针对单个 API Key，总限制会根据健康密钥数量自动倍增')
+
+    for model in models:
+        st.markdown(f"### {model}")
+
+        current_config = get_cached_model_config(model)
+        if not current_config or not current_config.get('success'):
+            st.warning(f"无法加载模型配置")
+            continue
+
+        with st.form(f"model_config_{model}"):
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                rpm = st.number_input(
+                    "RPM (每分钟请求)",
+                    min_value=1,
+                    value=current_config.get('single_api_rpm_limit', 10 if 'flash' in model else 5),
+                    key=f"rpm_{model}"
+                )
+
+            with col2:
+                rpd = st.number_input(
+                    "RPD (每日请求)",
+                    min_value=1,
+                    value=current_config.get('single_api_rpd_limit', 250 if 'flash' in model else 100),
+                    key=f"rpd_{model}"
+                )
+
+            with col3:
+                tpm = st.number_input(
+                    "TPM (每分钟令牌)",
+                    min_value=1000,
+                    value=current_config.get('single_api_tpm_limit', 250000),
+                    key=f"tpm_{model}"
+                )
+
+            with col4:
+                status_options = {1: "激活", 0: "禁用"}
+                current_status = current_config.get('status', 1)
+                new_status = st.selectbox(
+                    "状态",
+                    options=list(status_options.values()),
+                    index=0 if current_status == 1 else 1,
+                    key=f"status_{model}"
+                )
+
+            if st.form_submit_button("保存配置", type="primary", use_container_width=True):
+                update_data = {
+                    "single_api_rpm_limit": rpm,
+                    "single_api_rpd_limit": rpd,
+                    "single_api_tpm_limit": tpm,
+                    "status": 1 if new_status == "激活" else 0
+                }
+
+                result = call_api(f'/admin/models/{model}', 'POST', data=update_data)
+                if result and result.get('success'):
+                    st.success("配置已保存")
+                    st.cache_data.clear()
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("保存失败")
 
 elif page == "系统设置":
     st.title("系统设置")
@@ -2929,12 +2643,10 @@ elif page == "系统设置":
         st.stop()
 
     # 包含故障转移配置的标签页
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["思考模式", "提示词注入", "流式模式", "负载均衡", "故障转移", "自动清理"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["思考模式", "提示词注入", "流式模式", "负载均衡", "故障转移", "自动清理", "系统信息"])
 
     with tab1:
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="section-title">思考模式配置</h4>', unsafe_allow_html=True)
+        st.markdown("#### 思考模式配置")
         st.markdown("启用推理功能以提高复杂查询的响应质量")
 
         thinking_config = stats_data.get('thinking_config', {})
@@ -2986,11 +2698,8 @@ elif page == "系统设置":
                     time.sleep(1)
                     st.rerun()
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with tab2:
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="section-title">提示词注入</h4>', unsafe_allow_html=True)
+        st.markdown("#### 提示词注入")
         st.markdown("为所有请求自动添加自定义指令")
 
         inject_config = stats_data.get('inject_config', {})
@@ -3035,33 +2744,30 @@ elif page == "系统设置":
                     time.sleep(1)
                     st.rerun()
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with tab3:
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="section-title">流式模式配置</h4>', unsafe_allow_html=True)
+        st.markdown("#### 流式模式配置")
         st.markdown("配置API响应的流式输出行为")
 
         stream_mode_config = stats_data.get('stream_mode_config', {})
 
         with st.form("stream_mode_form"):
             st.markdown("**选择流式模式**")
-
+            
             mode_options = {
                 'auto': '自动模式',
                 'stream': '流式模式',
                 'non_stream': '非流式模式'
             }
-
+            
             current_mode = stream_mode_config.get('mode', 'auto')
-
+            
             selected_mode = st.radio(
                 "流式模式",
                 options=list(mode_options.keys()),
                 format_func=lambda x: mode_options[x],
                 index=list(mode_options.keys()).index(current_mode)
             )
-
+            
             # 显示当前模式的详细说明
             if selected_mode == 'auto':
                 st.info("**自动模式**: 系统会根据用户请求中的stream参数来决定是否使用流式输出。这是默认行为。")
@@ -3069,12 +2775,12 @@ elif page == "系统设置":
                 st.warning("**流式模式**: 无论用户请求如何，所有API响应都将使用流式输出。")
             elif selected_mode == 'non_stream':
                 st.warning("**非流式模式**: 无论用户请求如何，所有API响应都将等待完整生成后一次性返回。")
-
+            
             if st.form_submit_button("保存配置", type="primary", use_container_width=True):
                 update_data = {
                     "mode": selected_mode
                 }
-
+                
                 result = call_api('/admin/config/stream-mode', 'POST', data=update_data)
                 if result and result.get('success'):
                     st.success("配置已保存")
@@ -3084,11 +2790,8 @@ elif page == "系统设置":
                 else:
                     st.error("保存失败")
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with tab4:
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="section-title">负载均衡策略</h4>', unsafe_allow_html=True)
+        st.markdown("#### 负载均衡策略")
 
         # 获取当前策略
         all_configs = call_api('/admin/config')
@@ -3122,52 +2825,104 @@ elif page == "系统设置":
                 if result and result.get('success'):
                     st.success(f"策略已更新为: {strategy_options[strategy]}")
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with tab5:  # 故障转移配置标签页
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="section-title">快速故障转移配置</h4>', unsafe_allow_html=True)
+        st.markdown("#### 快速故障转移配置")
 
         # 获取当前配置
         failover_config_data = get_cached_failover_config()
         failover_stats_data = get_cached_failover_stats()
 
         if not failover_config_data or not failover_config_data.get('success'):
-            st.error("无法获取故障转移配置")
+            st.error("❌ 无法获取故障转移配置")
         else:
             current_config = failover_config_data.get('config', {})
             stats_info = failover_config_data.get('stats', {})
 
             # 顶部状态概览
-            st.markdown("##### 状态概览")
+            st.markdown("##### 📊 故障转移状态")
 
             col1, col2, col3, col4 = st.columns(4)
 
             with col1:
                 # 快速故障转移状态
                 fast_enabled = current_config.get('fast_failover_enabled', True)
+                status_color = "#10b981" if fast_enabled else "#ef4444"
                 status_text = "快速模式" if fast_enabled else "传统模式"
-                st.metric("故障转移", status_text)
+                status_icon = "⚡" if fast_enabled else "🐢"
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">{status_icon}</span>
+                        <span style="font-weight: 600; color: #374151;">故障转移</span>
+                    </div>
+                    <div style="color: {status_color}; font-weight: 500; font-size: 1rem; text-align: center;">
+                        {status_text}
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
 
             with col2:
                 # 最大尝试次数
                 max_attempts = current_config.get('max_key_attempts', 5)
                 available_keys = stats_info.get('available_keys', 0)
-                st.metric("尝试次数", f"最多 {max_attempts} 次")
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-weight: 600; color: #374151;">
+                        尝试次数
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: #6366f1; font-weight: 500; font-size: 1.1rem;">
+                            最多 {max_attempts} 次
+                        </div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">
+                            可用 {available_keys} 个Key
+                        </div>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
 
             with col3:
                 # 健康Key数量
                 healthy_keys = stats_info.get('healthy_keys', 0)
-                st.metric("健康Keys", f"{healthy_keys} 个")
+                health_color = "#10b981" if healthy_keys > 0 else "#ef4444"
+                health_icon = "💚" if healthy_keys > 0 else "❤️"
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">{health_icon}</span>
+                        <span style="font-weight: 600; color: #374151;">健康Keys</span>
+                    </div>
+                    <div style="color: {health_color}; font-weight: 500; font-size: 1.1rem; text-align: center;">
+                        {healthy_keys} 个
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
 
             with col4:
                 # 后台检测状态
                 bg_check = current_config.get('background_health_check', True)
+                bg_color = "#8b5cf6" if bg_check else "#6b7280"
                 bg_text = "已启用" if bg_check else "已禁用"
-                st.metric("后台检测", bg_text)
+                bg_icon = "🔍" if bg_check else "⏸️"
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">{bg_icon}</span>
+                        <span style="font-weight: 600; color: #374151;">后台检测</span>
+                    </div>
+                    <div style="color: {bg_color}; font-weight: 500; font-size: 1rem; text-align: center;">
+                        {bg_text}
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
 
             # 配置表单
-            st.markdown("##### 故障转移策略配置")
+            st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
+            st.markdown("##### ⚙️ 故障转移策略配置")
 
             with st.form("failover_config_form"):
                 col1, col2 = st.columns(2)
@@ -3177,14 +2932,14 @@ elif page == "系统设置":
 
                     # 快速故障转移开关
                     fast_failover_enabled = st.checkbox(
-                        "启用快速故障转移",
+                        "⚡ 启用快速故障转移",
                         value=current_config.get('fast_failover_enabled', True),
                         help="启用后，失败的Key会立即切换到下一个，而不是重试"
                     )
 
                     # 最大Key尝试次数
                     max_key_attempts = st.slider(
-                        "最大Key尝试次数",
+                        "🔄 最大Key尝试次数",
                         min_value=1,
                         max_value=min(20, available_keys) if available_keys > 0 else 20,
                         value=current_config.get('max_key_attempts', 5),
@@ -3196,14 +2951,14 @@ elif page == "系统设置":
 
                     # 后台健康检测
                     background_health_check = st.checkbox(
-                        "启用后台健康检测",
+                        "🔍 启用后台健康检测",
                         value=current_config.get('background_health_check', True),
                         help="Key失败后在后台进行健康检测"
                     )
 
                     # 健康检测延迟
                     health_check_delay = st.slider(
-                        "健康检测延迟 (秒)",
+                        "⏱️ 健康检测延迟 (秒)",
                         min_value=1,
                         max_value=60,
                         value=current_config.get('health_check_delay', 5),
@@ -3213,24 +2968,24 @@ elif page == "系统设置":
                 # 策略说明
                 st.markdown("**策略说明：**")
                 if fast_failover_enabled:
-                    strategy_desc = "快速模式：Key失败立即切换，无重试，最大化响应速度"
+                    strategy_desc = "🟢 **快速模式**：Key失败立即切换，无重试，最大化响应速度"
                 else:
-                    strategy_desc = "传统模式：使用传统的重试机制，每个Key会多次重试"
+                    strategy_desc = "🔵 **传统模式**：使用传统的重试机制，每个Key会多次重试"
 
                 st.info(strategy_desc)
 
                 # 性能预估
                 if fast_failover_enabled:
                     expected_time = max_key_attempts * 2  # 估算：每次切换约2秒
-                    st.success(f"预计最坏情况下的故障转移时间：约 {expected_time} 秒")
+                    st.success(f"⚡ 预计最坏情况下的故障转移时间：约 {expected_time} 秒")
                 else:
-                    st.info("传统模式下故障转移时间取决于网络条件和重试策略")
+                    st.info("⏳ 传统模式下故障转移时间取决于网络条件和重试策略")
 
                 # 提交按钮
                 col1, col2 = st.columns(2)
                 with col1:
                     save_config = st.form_submit_button(
-                        "保存配置",
+                        "💾 保存配置",
                         type="primary",
                         use_container_width=True
                     )
@@ -3238,7 +2993,7 @@ elif page == "系统设置":
                 with col2:
                     # 获取统计信息按钮
                     refresh_stats = st.form_submit_button(
-                        "刷新统计",
+                        "📊 刷新统计",
                         use_container_width=True
                     )
 
@@ -3253,61 +3008,111 @@ elif page == "系统设置":
 
                     result = update_failover_config(config_data)
                     if result and result.get('success'):
-                        st.success("故障转移配置保存成功")
-                        st.info("新配置将在下次请求时生效")
+                        st.success("✅ 故障转移配置保存成功")
+                        st.info("🔄 新配置将在下次请求时生效")
                         st.cache_data.clear()
                         time.sleep(1)
                         st.rerun()
                     else:
-                        st.error("配置保存失败，请重试")
+                        st.error("❌ 配置保存失败，请重试")
 
                 if refresh_stats:
                     st.cache_data.clear()
                     st.rerun()
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with tab6:  # 自动清理标签页
-        st.markdown('<div class="unified-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="section-title">自动清理异常API Key</h4>', unsafe_allow_html=True)
+        st.markdown("#### 自动清理异常API Key")
         st.markdown("智能识别并自动移除连续异常的API Key，确保服务质量和稳定性")
 
         # 获取当前配置和状态
         cleanup_status = get_cached_cleanup_status()
 
         if not cleanup_status or not cleanup_status.get('success'):
-            st.error("无法获取自动清理状态，请检查后端服务连接")
+            st.error("❌ 无法获取自动清理状态，请检查后端服务连接")
         else:
-            # 状态概览
-            st.markdown("##### 清理状态概览")
+            # === 顶部状态概览 ===
+            st.markdown("##### 📊 清理状态概览")
 
             col1, col2, col3, col4 = st.columns(4)
 
             with col1:
                 # 自动清理状态
                 is_enabled = cleanup_status.get('auto_cleanup_enabled', False)
+                status_color = "#10b981" if is_enabled else "#ef4444"
                 status_text = "已启用" if is_enabled else "已禁用"
-                st.metric("自动清理", status_text)
+                status_icon = "🟢" if is_enabled else "🔴"
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">{status_icon}</span>
+                        <span style="font-weight: 600; color: #374151;">自动清理</span>
+                    </div>
+                    <div style="color: {status_color}; font-weight: 500; font-size: 1.1rem; text-align: center;">
+                        {status_text}
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
 
             with col2:
                 # 阈值配置
                 days_threshold = cleanup_status.get('days_threshold', 3)
                 min_checks = cleanup_status.get('min_checks_per_day', 5)
-                st.metric("清理阈值", f"连续 {days_threshold} 天异常")
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-weight: 600; color: #374151;">
+                        清理阈值
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: #6366f1; font-weight: 500; font-size: 1.1rem;">
+                            连续 {days_threshold} 天异常
+                        </div>
+                        <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">
+                            需日检≥{min_checks}次
+                        </div>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
 
             with col3:
                 # 风险Keys数量
                 at_risk_keys = cleanup_status.get('at_risk_keys', [])
                 risk_count = len(at_risk_keys)
-                st.metric("风险Keys", f"{risk_count} 个")
+                risk_color = "#ef4444" if risk_count > 0 else "#10b981"
+                risk_icon = "⚠️" if risk_count > 0 else "✅"
+
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">{risk_icon}</span>
+                        <span style="font-weight: 600; color: #374151;">风险Keys</span>
+                    </div>
+                    <div style="color: {risk_color}; font-weight: 500; font-size: 1.1rem; text-align: center;">
+                        {risk_count} 个
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
 
             with col4:
                 # 下次清理时间
                 next_cleanup = "每日 02:00 UTC"
-                st.metric("下次清理", next_cleanup)
 
-            # 风险预警区域
+                st.markdown(f'''
+                <div class="status-card-style" style="height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-weight: 600; color: #374151;">
+                        下次清理
+                    </div>
+                    <div style="color: #8b5cf6; font-weight: 500; font-size: 1.1rem; text-align: center;">
+                        🕐 {next_cleanup}
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            # === 风险预警区域 ===
             if at_risk_keys:
+                st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
+
                 # 风险等级统计
                 critical_keys = [k for k in at_risk_keys if k.get('consecutive_unhealthy_days', 0) >= days_threshold]
                 warning_keys = [k for k in at_risk_keys if k.get('consecutive_unhealthy_days', 0) < days_threshold]
@@ -3315,29 +3120,40 @@ elif page == "系统设置":
                 col1, col2 = st.columns([2, 1])
 
                 with col1:
-                    st.markdown(f"##### 风险API Key预警 ({len(at_risk_keys)} 个)")
+                    st.markdown(f"##### ⚠️ 风险API Key预警 ({len(at_risk_keys)} 个)")
 
                     if critical_keys:
-                        st.error(f"{len(critical_keys)} 个Key将在下次清理时被移除")
+                        st.error(f"🔥 {len(critical_keys)} 个Key将在下次清理时被移除")
 
                     if warning_keys:
-                        st.warning(f"{len(warning_keys)} 个Key处于风险状态")
+                        st.warning(f"⚠️ {len(warning_keys)} 个Key处于风险状态")
 
                 with col2:
                     # 快速操作按钮
-                    if st.button("立即检测健康状态", use_container_width=True):
+                    if st.button("🔄 立即检测健康状态", use_container_width=True):
                         with st.spinner("检测中..."):
                             result = check_all_keys_health()
                             if result and result.get('success'):
-                                st.success(result['message'])
+                                st.success("✅ " + result['message'])
                                 st.cache_data.clear()
                                 time.sleep(1)
                                 st.rerun()
                             else:
-                                st.error("健康检测失败")
+                                st.error("❌ 健康检测失败")
 
                 # 风险Keys详细列表
                 st.markdown("**风险Keys详情：**")
+
+                # 表头
+                st.markdown('''
+                <div style="display: grid; grid-template-columns: 0.5fr 2.5fr 1fr 1fr 1.5fr; gap: 1rem; padding: 0.75rem 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+                    <div>ID</div>
+                    <div>API Key</div>
+                    <div>异常天数</div>
+                    <div>风险等级</div>
+                    <div>预计清理时间</div>
+                </div>
+                ''', unsafe_allow_html=True)
 
                 # 数据行
                 for key in at_risk_keys:
@@ -3348,25 +3164,38 @@ elif page == "系统设置":
 
                     # 风险等级判断
                     if consecutive_days >= days_threshold:
-                        risk_level = "极高"
+                        risk_level = "🔥 极高"
+                        risk_color = "#ef4444"
                         time_text = "下次清理"
+                        time_color = "#ef4444"
                     elif consecutive_days >= days_threshold - 1:
-                        risk_level = "高"
+                        risk_level = "🟡 高"
+                        risk_color = "#f59e0b"
                         time_text = f"{days_until_removal}天后"
+                        time_color = "#f59e0b"
                     else:
-                        risk_level = "中"
+                        risk_level = "🟡 中"
+                        risk_color = "#f59e0b"
                         time_text = f"{days_until_removal}天后"
+                        time_color = "#6b7280"
 
-                    st.write(
-                        f"Key #{key_id}: {key_preview} - 异常 {consecutive_days} 天 - 风险等级: {risk_level} - 预计清理: {time_text}")
+                    st.markdown(f'''
+                    <div style="display: grid; grid-template-columns: 0.5fr 2.5fr 1fr 1fr 1.5fr; gap: 1rem; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; margin-bottom: 0.5rem; align-items: center;">
+                        <div style="font-weight: 500;">#{key_id}</div>
+                        <div style="font-family: monospace; background: rgba(255, 255, 255, 0.3); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem;">{key_preview}</div>
+                        <div style="text-align: center; font-weight: 500; color: {risk_color};">{consecutive_days}天</div>
+                        <div style="color: {risk_color}; font-weight: 500;">{risk_level}</div>
+                        <div style="color: {time_color}; font-weight: 500;">{time_text}</div>
+                    </div>
+                    ''', unsafe_allow_html=True)
 
                 # 风险说明
-                with st.expander("查看风险评估详情"):
+                with st.expander("🔍 查看风险评估详情"):
                     st.markdown(f"""
                     **风险评估标准：**
-                    - 安全：连续异常天数 < {days_threshold - 1} 天
-                    - 警告：连续异常天数 = {days_threshold - 1} 天（距离清理1天）
-                    - 极高：连续异常天数 ≥ {days_threshold} 天（下次清理将被移除）
+                    - 🟢 **安全**：连续异常天数 < {days_threshold - 1} 天
+                    - 🟡 **警告**：连续异常天数 = {days_threshold - 1} 天（距离清理1天）
+                    - 🔥 **极高**：连续异常天数 ≥ {days_threshold} 天（下次清理将被移除）
 
                     **异常判定标准：**
                     - 单日成功率 < 10%
@@ -3381,10 +3210,11 @@ elif page == "系统设置":
 
             else:
                 # 无风险状态
-                st.success("当前所有API Key状态良好，无清理风险")
+                st.success("✅ 当前所有API Key状态良好，无清理风险")
 
-            # 配置管理区域
-            st.markdown("##### 清理配置管理")
+            # === 配置管理区域 ===
+            st.markdown('<hr style="margin: 2rem 0;">', unsafe_allow_html=True)
+            st.markdown("##### ⚙️ 清理配置管理")
 
             # 配置表单
             with st.form("auto_cleanup_config_form"):
@@ -3394,13 +3224,13 @@ elif page == "系统设置":
                     st.markdown("**基础设置**")
 
                     cleanup_enabled = st.checkbox(
-                        "启用自动清理",
+                        "🔧 启用自动清理",
                         value=cleanup_status.get('auto_cleanup_enabled', False),
                         help="启用后将在每日凌晨2点自动检查并移除连续异常的API Key"
                     )
 
                     days_threshold = st.slider(
-                        "连续异常天数阈值",
+                        "📅 连续异常天数阈值",
                         min_value=1,
                         max_value=10,
                         value=cleanup_status.get('days_threshold', 3),
@@ -3408,7 +3238,7 @@ elif page == "系统设置":
                     )
 
                     min_checks_per_day = st.slider(
-                        "每日最少检测次数",
+                        "🔍 每日最少检测次数",
                         min_value=1,
                         max_value=50,
                         value=cleanup_status.get('min_checks_per_day', 5),
@@ -3424,18 +3254,18 @@ elif page == "系统设置":
                             [k for k in at_risk_keys if k.get('consecutive_unhealthy_days', 0) >= days_threshold])
 
                         if estimated_removals > 0:
-                            st.error(f"当前配置下将清理 {estimated_removals} 个Key")
+                            st.error(f"⚠️ 当前配置下将清理 {estimated_removals} 个Key")
                         else:
-                            st.success("当前配置下无Key需要清理")
+                            st.success("✅ 当前配置下无Key需要清理")
 
                         # 清理时间提醒
-                        st.info("清理执行时间：每天凌晨 02:00 UTC")
+                        st.info("🕐 清理执行时间：每天凌晨 02:00 UTC")
 
                         # 紧急情况处理
                         if estimated_removals > 0:
-                            st.warning("如需立即处理异常Key，可使用下方「立即执行清理」按钮")
+                            st.warning("💡 如需立即处理异常Key，可使用下方「立即执行清理」按钮")
                     else:
-                        st.info("自动清理已禁用")
+                        st.info("❌ 自动清理已禁用")
 
                 # 操作按钮区域
                 st.markdown("**操作选项**")
@@ -3443,14 +3273,14 @@ elif page == "系统设置":
 
                 with col1:
                     save_config = st.form_submit_button(
-                        "保存配置",
+                        "💾 保存配置",
                         type="primary",
                         use_container_width=True
                     )
 
                 with col2:
                     manual_cleanup = st.form_submit_button(
-                        "立即执行清理",
+                        "🧹 立即执行清理",
                         use_container_width=True
                     )
 
@@ -3464,18 +3294,18 @@ elif page == "系统设置":
 
                     result = update_cleanup_config(config_data)
                     if result and result.get('success'):
-                        st.success("配置保存成功")
-                        st.info("新配置将在下次定时清理时生效")
+                        st.success("✅ 配置保存成功")
+                        st.info("⏰ 新配置将在下次定时清理时生效")
                         st.cache_data.clear()
                         time.sleep(1)
                         st.rerun()
                     else:
-                        st.error("配置保存失败，请重试")
+                        st.error("❌ 配置保存失败，请重试")
 
                 if manual_cleanup:
                     if at_risk_keys:
                         # 执行前确认
-                        st.warning("即将执行清理操作，这将影响以下Keys：")
+                        st.warning("⚠️ 即将执行清理操作，这将影响以下Keys：")
                         critical_keys = [k for k in at_risk_keys if
                                          k.get('consecutive_unhealthy_days', 0) >= days_threshold]
 
@@ -3485,20 +3315,20 @@ elif page == "系统设置":
                         with st.spinner("执行清理中...请稍候"):
                             result = manual_cleanup()
                             if result and result.get('success'):
-                                st.success("手动清理已完成")
-                                st.info("建议刷新页面查看最新状态")
+                                st.success("✅ 手动清理已完成")
+                                st.info("🔄 建议刷新页面查看最新状态")
                                 st.cache_data.clear()
                                 time.sleep(1)
                                 st.rerun()
                             else:
-                                st.error("清理执行失败")
+                                st.error("❌ 清理执行失败")
                     else:
-                        st.info("当前无需清理的Keys")
+                        st.info("✅ 当前无需清理的Keys")
 
             # 规则说明
-            with st.expander("自动清理规则详细说明"):
+            with st.expander("📋 自动清理规则详细说明"):
                 st.markdown("""
-                ### 清理触发条件
+                ### 🎯 清理触发条件
 
                 一个API Key会被自动清理，必须**同时满足**以下所有条件：
 
@@ -3507,33 +3337,33 @@ elif page == "系统设置":
                 3. **异常判定标准**：单日成功率 < 10%
                 4. **自动清理功能已启用**
 
-                ### 安全保护机制
+                ### 🛡️ 安全保护机制
 
                 - **保留策略**：始终保留至少1个健康的API Key，确保服务不中断
                 - **检测保护**：检测次数不足的Key不会被清理，避免因监控数据不足导致误删
                 - **软删除**：被清理的Key只是禁用状态，数据仍保留，可随时手动恢复
                 - **历史保存**：所有健康检测历史都会保留，便于问题排查
 
-                ### 执行时间
+                ### ⏰ 执行时间
 
                 - **定时清理**：每天凌晨 02:00 UTC 自动执行
                 - **手动清理**：管理员可随时手动触发清理操作
                 - **实时监控**：每小时进行健康检测，及时发现异常
 
-                ### 恢复方法
+                ### 🔄 恢复方法
 
                 1. **快速恢复**：在密钥管理页面找到被禁用的Key，点击「激活」按钮
                 2. **重新添加**：如果Key已删除，可重新添加相同的API Key
                 3. **批量操作**：支持批量恢复多个被误删的Key
 
-                ### 监控指标
+                ### 📊 监控指标
 
                 - **成功率**：API请求成功的比例
                 - **响应时间**：API响应的平均时间
                 - **连续失败次数**：连续失败的请求数量
                 - **每日检测次数**：系统每天对Key进行的健康检测次数
 
-                ### 建议配置
+                ### ⚙️ 建议配置
 
                 - **保守配置**：阈值 5-7 天，适合稳定环境
                 - **激进配置**：阈值 2-3 天，适合对质量要求极高的场景
@@ -3541,15 +3371,32 @@ elif page == "系统设置":
                 """)
 
             # 底部提示
+            st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
+
             # 根据当前状态给出相应提示
             if not cleanup_status.get('auto_cleanup_enabled', False):
-                st.info("提示：当前自动清理功能已禁用。启用后可自动维护API Key质量，提高服务稳定性。")
+                st.info("💡 **提示**：当前自动清理功能已禁用。启用后可自动维护API Key质量，提高服务稳定性。")
             elif len(at_risk_keys) > 0:
-                st.warning("注意：检测到风险API Key，建议及时处理以维护服务质量。")
+                st.warning("⚠️ **注意**：检测到风险API Key，建议及时处理以维护服务质量。")
             else:
-                st.success("状态良好：所有API Key运行正常，自动清理功能正在守护您的服务质量。")
+                st.success("✅ **状态良好**：所有API Key运行正常，自动清理功能正在守护您的服务质量。")
 
-        st.markdown('</div>', unsafe_allow_html=True)
+    with tab7:
+        st.markdown("#### 📊 系统信息")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("##### 服务信息")
+            st.text(f"Python: {status_data.get('python_version', 'Unknown').split()[0]}")
+            st.text(f"版本: {status_data.get('version', '1.3.0')}")
+            st.text(f"模型: {', '.join(status_data.get('models', []))}")
+
+        with col2:
+            st.markdown("##### 资源使用")
+            st.text(f"内存: {status_data.get('memory_usage_mb', 0):.1f} MB")
+            st.text(f"CPU: {status_data.get('cpu_percent', 0):.1f}%")
+            st.text(f"运行: {status_data.get('uptime_seconds', 0) // 3600} 小时")
 
 # --- 页脚 ---
 st.markdown(
