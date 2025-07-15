@@ -1315,20 +1315,21 @@ st.markdown("""
 
     /* 按钮玻璃效果 */
     .stButton > button {
-        border-radius: 14px;
+        border-radius: 16px;
         font-weight: 500;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(99, 102, 241, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.4);
         font-size: 0.9375rem;
         padding: 0.75rem 1.5rem;
         letter-spacing: 0.02em;
-        background: rgba(99, 102, 241, 0.1);
-        color: #4f46e5;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.2);
+        color: #1f2937;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         box-shadow: 
-            0 8px 24px rgba(99, 102, 241, 0.15),
-            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            0 8px 24px rgba(0, 0, 0, 0.08),
+            0 4px 12px rgba(0, 0, 0, 0.04),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5);
         position: relative;
         overflow: hidden;
         -webkit-tap-highlight-color: transparent; 
@@ -1351,13 +1352,62 @@ st.markdown("""
     }
 
     .stButton > button:hover {
-        background: rgba(99, 102, 241, 0.2);
-        transform: translateY(-3px) scale(1.02);
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px) scale(1.02);
         box-shadow: 
-            0 12px 36px rgba(99, 102, 241, 0.25),
+            0 12px 32px rgba(0, 0, 0, 0.12),
+            0 6px 16px rgba(0, 0, 0, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: #111827;
+    }
+
+    /* 主要按钮样式 */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, 
+            rgba(99, 102, 241, 0.4) 0%, 
+            rgba(168, 85, 247, 0.35) 50%,
+            rgba(99, 102, 241, 0.4) 100%
+        );
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        color: #1f2937;
+        box-shadow: 
+            0 8px 24px rgba(99, 102, 241, 0.25),
+            0 4px 12px rgba(99, 102, 241, 0.15),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
-        border-color: rgba(99, 102, 241, 0.4);
-        color: #4338ca;
+    }
+
+    .stButton > button[kind="primary"]:hover {
+        background: linear-gradient(135deg, 
+            rgba(99, 102, 241, 0.5) 0%, 
+            rgba(168, 85, 247, 0.45) 50%,
+            rgba(99, 102, 241, 0.5) 100%
+        );
+        border-color: rgba(99, 102, 241, 0.5);
+        box-shadow: 
+            0 12px 32px rgba(99, 102, 241, 0.3),
+            0 6px 16px rgba(99, 102, 241, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        color: #111827;
+    }
+
+    /* 次要按钮样式 */
+    .stButton > button[kind="secondary"] {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #4b5563;
+        box-shadow: 
+            0 6px 20px rgba(0, 0, 0, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .stButton > button[kind="secondary"]:hover {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.4);
+        color: #374151;
+        box-shadow: 
+            0 10px 28px rgba(0, 0, 0, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
 
     /* 按钮 */
@@ -1370,6 +1420,24 @@ st.markdown("""
             transform: scale(0.98);
             transition: transform 0.1s ease;
         }
+
+        .stButton > button[kind="primary"]:hover {
+            transform: none;
+        }
+
+        .stButton > button[kind="primary"]:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+        }
+
+        .stButton > button[kind="secondary"]:hover {
+            transform: none;
+        }
+
+        .stButton > button[kind="secondary"]:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+        }
     }
 
     .stButton > button:hover::before {
@@ -1378,6 +1446,21 @@ st.markdown("""
 
     .stButton > button:active {
         transform: translateY(-1px) scale(0.98);
+    }
+
+    .stButton > button[kind="primary"]:active {
+        transform: translateY(-1px) scale(0.98);
+        box-shadow: 
+            0 6px 20px rgba(99, 102, 241, 0.4),
+            0 3px 8px rgba(99, 102, 241, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .stButton > button[kind="secondary"]:active {
+        transform: translateY(-1px) scale(0.98);
+        box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
     /* 输入框 */
@@ -1426,6 +1509,106 @@ st.markdown("""
         .stSelectbox > div > div > select:focus,
         .stTextArea > div > div > textarea:focus {
             transform: none;
+        }
+    }
+
+    /* 滑动条玻璃效果 */
+    .stSlider {
+        padding: 0.5rem 0;
+    }
+
+    .stSlider > div > div {
+        background: rgba(255, 255, 255, 0.4) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border-radius: 20px !important;
+        height: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.04),
+            inset 0 2px 0 rgba(255, 255, 255, 0.3),
+            inset 0 -2px 0 rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .stSlider > div > div > div > div {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%) !important;
+        border-radius: 20px !important;
+        height: 12px !important;
+        box-shadow: 
+            0 0 20px rgba(99, 102, 241, 0.4),
+            0 4px 12px rgba(99, 102, 241, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stSlider > div > div > div > div::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(255, 255, 255, 0.3) 50%, 
+            transparent 100%
+        );
+        animation: slider-shimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes slider-shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    /* 滑动条手柄 */
+    .stSlider > div > div > div > div[role="slider"] {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 2px solid rgba(99, 102, 241, 0.4) !important;
+        border-radius: 50% !important;
+        width: 24px !important;
+        height: 24px !important;
+        box-shadow: 
+            0 8px 24px rgba(99, 102, 241, 0.3),
+            0 4px 12px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        cursor: pointer !important;
+    }
+
+    .stSlider > div > div > div > div[role="slider"]:hover {
+        transform: scale(1.15) !important;
+        border-color: rgba(99, 102, 241, 0.6) !important;
+        box-shadow: 
+            0 12px 32px rgba(99, 102, 241, 0.4),
+            0 6px 16px rgba(0, 0, 0, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .stSlider > div > div > div > div[role="slider"]:active {
+        transform: scale(1.05) !important;
+        box-shadow: 
+            0 6px 20px rgba(99, 102, 241, 0.5),
+            0 3px 8px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+    }
+
+    /* 移动端滑动条优化 */
+    @media (max-width: 768px) {
+        .stSlider > div > div > div > div[role="slider"] {
+            width: 28px !important;
+            height: 28px !important;
+        }
+
+        .stSlider > div > div > div > div[role="slider"]:hover {
+            transform: none !important;
+        }
+
+        .stSlider > div > div > div > div[role="slider"]:active {
+            transform: scale(1.1) !important;
         }
     }
 
@@ -1828,8 +2011,7 @@ st.markdown("""
         margin-bottom: 1rem;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid rgba(99, 102, 241, 0.2);
-        background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
-        padding-left: 1rem;
+        padding-left: 0.5rem;
         border-radius: 8px;
     }
 
@@ -1837,7 +2019,7 @@ st.markdown("""
     @media (max-width: 768px) {
         .section-title {
             font-size: 1rem;
-            padding-left: 0.75rem;
+            padding-left: 0.25rem;
             padding-bottom: 0.375rem;
         }
     }
@@ -1942,17 +2124,25 @@ st.markdown("""
     @media (max-width: 768px) {
         /* 侧边栏切换按钮样式 */
         button[kind="secondary"] {
-            background: rgba(99, 102, 241, 0.1) !important;
+            background: rgba(255, 255, 255, 0.2) !important;
             backdrop-filter: blur(12px) !important;
             -webkit-backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(99, 102, 241, 0.3) !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
             border-radius: 12px !important;
             box-shadow: 
-                0 4px 16px rgba(99, 102, 241, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-            color: #4f46e5 !important;
+                0 4px 16px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+            color: #374151 !important;
             font-weight: 500 !important;
             min-height: 44px !important;
+        }
+
+        button[kind="secondary"]:hover {
+            background: rgba(255, 255, 255, 0.3) !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
         }
     }
 
