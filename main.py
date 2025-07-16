@@ -187,6 +187,7 @@ def get_cached_failover_stats():
     """获取缓存的故障转移统计"""
     return get_failover_stats()
 
+
 # --- 密钥管理函数 ---
 def mask_key(key: str, show_full: bool = False) -> str:
     """密钥掩码处理"""
@@ -242,6 +243,7 @@ def format_health_status(health_status: str) -> str:
         'unknown': '未知'
     }
     return status_map.get(health_status, health_status)
+
 
 # --- 玻璃拟态风格CSS ---
 st.markdown("""
@@ -1945,6 +1947,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 # --- 获取服务状态函数 ---
 @st.cache_data(ttl=10)
 def get_service_status():
@@ -1961,6 +1964,7 @@ def get_service_status():
     except:
         pass
     return {'online': False, 'active_keys': 0, 'healthy_keys': 0}
+
 
 # --- 玻璃拟态侧边栏 ---
 with st.sidebar:
@@ -2643,7 +2647,9 @@ elif page == "系统设置":
         st.stop()
 
     # 包含故障转移配置的标签页
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["思考模式", "提示词注入", "流式模式", "负载均衡", "故障转移", "自动清理", "系统信息"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+        "思考模式", "提示词注入", "流式模式", "负载均衡", "故障转移", "自动清理", "系统信息"
+    ])
 
     with tab1:
         st.markdown("#### 思考模式配置")
@@ -2651,28 +2657,54 @@ elif page == "系统设置":
 
         thinking_config = stats_data.get('thinking_config', {})
 
+        # 状态概览卡片
+        current_status = "已启用" if thinking_config.get('enabled', False) else "已禁用"
+        status_color = "#10b981" if thinking_config.get('enabled', False) else "#6b7280"
+
+        st.markdown(f'''
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); 
+                    border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h5 style="margin: 0; color: #374151; font-size: 1.1rem;">当前状态</h5>
+                    <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                        思考预算: {thinking_config.get('budget', -1)} | 
+                        包含过程: {'是' if thinking_config.get('include_thoughts', False) else '否'}
+                    </p>
+                </div>
+                <div style="background: {status_color}; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;">
+                    {current_status}
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
         with st.form("thinking_config_form"):
             col1, col2 = st.columns(2)
 
             with col1:
+                st.markdown("**基础配置**")
                 thinking_enabled = st.checkbox(
                     "启用思考模式",
-                    value=thinking_config.get('enabled', False)
+                    value=thinking_config.get('enabled', False),
+                    help="开启后模型会进行推理思考以提供更准确的回答"
                 )
 
                 include_thoughts = st.checkbox(
                     "在响应中包含思考过程",
-                    value=thinking_config.get('include_thoughts', False)
+                    value=thinking_config.get('include_thoughts', False),
+                    help="用户可以看到模型的思考过程"
                 )
 
             with col2:
+                st.markdown("**思考预算配置**")
                 budget_options = {
                     "自动": -1,
                     "禁用": 0,
                     "低 (4k)": 4096,
                     "中 (8k)": 8192,
-                    "flash最大思考预算 (24k)": 24576,
-                    "pro最大思考预算 (32k)": 32768
+                    "Flash最大 (24k)": 24576,
+                    "Pro最大 (32k)": 32768
                 }
 
                 current_budget = thinking_config.get('budget', -1)
@@ -2681,8 +2713,13 @@ elif page == "系统设置":
                 budget_option = st.selectbox(
                     "思考预算",
                     options=list(budget_options.keys()),
-                    index=list(budget_options.keys()).index(selected_option)
+                    index=list(budget_options.keys()).index(selected_option),
+                    help="控制模型思考的深度和复杂度"
                 )
+
+            # 配置说明
+            st.markdown("**配置说明**")
+            st.info("思考模式会增加响应时间，但能显著提高复杂问题的回答质量。建议在需要深度分析的场景中启用。")
 
             if st.form_submit_button("保存配置", type="primary", use_container_width=True):
                 update_data = {
@@ -2699,36 +2736,87 @@ elif page == "系统设置":
                     st.rerun()
 
     with tab2:
-        st.markdown("#### 提示词注入")
-        st.markdown("为所有请求自动添加自定义指令")
+        st.markdown("#### 提示词注入配置")
+        st.markdown("为所有请求自动添加自定义指令，实现统一的行为控制")
 
         inject_config = stats_data.get('inject_config', {})
 
+        # 状态概览
+        current_enabled = inject_config.get('enabled', False)
+        current_position = inject_config.get('position', 'system')
+        position_names = {
+            'system': '系统消息',
+            'user_prefix': '用户消息前',
+            'user_suffix': '用户消息后'
+        }
+
+        st.markdown(f'''
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); 
+                    border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h5 style="margin: 0; color: #374151; font-size: 1.1rem;">注入状态</h5>
+                    <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                        位置: {position_names.get(current_position, '未知')} | 
+                        内容长度: {len(inject_config.get('content', ''))} 字符
+                    </p>
+                </div>
+                <div style="background: {'#10b981' if current_enabled else '#6b7280'}; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;">
+                    {'已启用' if current_enabled else '已禁用'}
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
         with st.form("inject_prompt_form"):
-            inject_enabled = st.checkbox(
-                "启用提示词注入",
-                value=inject_config.get('enabled', False)
-            )
+            col1, col2 = st.columns([1, 1])
 
-            position_options = {
-                'system': '系统消息',
-                'user_prefix': '用户消息前',
-                'user_suffix': '用户消息后'
-            }
+            with col1:
+                st.markdown("**注入配置**")
+                inject_enabled = st.checkbox(
+                    "启用提示词注入",
+                    value=inject_config.get('enabled', False),
+                    help="开启后所有请求都会自动注入指定的提示词"
+                )
 
-            position = st.selectbox(
-                "注入位置",
-                options=list(position_options.keys()),
-                format_func=lambda x: position_options[x],
-                index=list(position_options.keys()).index(inject_config.get('position', 'system'))
-            )
+                position_options = {
+                    'system': '系统消息',
+                    'user_prefix': '用户消息前',
+                    'user_suffix': '用户消息后'
+                }
 
+                position = st.selectbox(
+                    "注入位置",
+                    options=list(position_options.keys()),
+                    format_func=lambda x: position_options[x],
+                    index=list(position_options.keys()).index(inject_config.get('position', 'system')),
+                    help="选择提示词在消息中的插入位置"
+                )
+
+            with col2:
+                st.markdown("**位置说明**")
+                position_descriptions = {
+                    'system': "作为系统消息发送，具有最高优先级，影响模型的整体行为",
+                    'user_prefix': "添加到用户消息开头，用于设置对话的上下文",
+                    'user_suffix': "添加到用户消息结尾，用于补充额外的指令"
+                }
+
+                current_desc = position_descriptions.get(position, "")
+                st.info(current_desc)
+
+            st.markdown("**提示词内容**")
             content = st.text_area(
                 "提示词内容",
                 value=inject_config.get('content', ''),
-                height=150,
-                placeholder="输入自定义提示词..."
+                height=120,
+                placeholder="输入自定义提示词...",
+                help="输入要注入的提示词内容，支持多行文本"
             )
+
+            # 字符统计
+            char_count = len(content)
+            if char_count > 0:
+                st.caption(f"当前字符数: {char_count}")
 
             if st.form_submit_button("保存配置", type="primary", use_container_width=True):
                 update_data = {
@@ -2746,41 +2834,78 @@ elif page == "系统设置":
 
     with tab3:
         st.markdown("#### 流式模式配置")
-        st.markdown("配置API响应的流式输出行为")
+        st.markdown("控制API响应的流式输出行为，优化用户体验")
 
         stream_mode_config = stats_data.get('stream_mode_config', {})
+        current_mode = stream_mode_config.get('mode', 'auto')
+
+        # 状态概览
+        mode_names = {
+            'auto': '自动模式',
+            'stream': '强制流式',
+            'non_stream': '强制非流式'
+        }
+
+        st.markdown(f'''
+        <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); 
+                    border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h5 style="margin: 0; color: #374151; font-size: 1.1rem;">当前模式</h5>
+                    <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                        影响所有API响应的输出方式
+                    </p>
+                </div>
+                <div style="background: #3b82f6; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;">
+                    {mode_names.get(current_mode, '未知')}
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
 
         with st.form("stream_mode_form"):
-            st.markdown("**选择流式模式**")
-            
-            mode_options = {
-                'auto': '自动模式',
-                'stream': '流式模式',
-                'non_stream': '非流式模式'
-            }
-            
-            current_mode = stream_mode_config.get('mode', 'auto')
-            
-            selected_mode = st.radio(
-                "流式模式",
-                options=list(mode_options.keys()),
-                format_func=lambda x: mode_options[x],
-                index=list(mode_options.keys()).index(current_mode)
-            )
-            
-            # 显示当前模式的详细说明
-            if selected_mode == 'auto':
-                st.info("**自动模式**: 系统会根据用户请求中的stream参数来决定是否使用流式输出。这是默认行为。")
-            elif selected_mode == 'stream':
-                st.warning("**流式模式**: 无论用户请求如何，所有API响应都将使用流式输出。")
+            col1, col2 = st.columns([1, 1])
+
+            with col1:
+                st.markdown("**模式选择**")
+                mode_options = {
+                    'auto': '自动模式',
+                    'stream': '强制流式',
+                    'non_stream': '强制非流式'
+                }
+
+                selected_mode = st.selectbox(
+                    "流式输出模式",
+                    options=list(mode_options.keys()),
+                    format_func=lambda x: mode_options[x],
+                    index=list(mode_options.keys()).index(current_mode),
+                    help="选择API响应的流式输出策略"
+                )
+
+            with col2:
+                st.markdown("**模式说明**")
+                mode_descriptions = {
+                    'auto': "根据用户请求参数决定，提供最佳的兼容性",
+                    'stream': "所有响应都使用流式输出，适合实时交互场景",
+                    'non_stream': "所有响应都等待完整生成，适合批处理场景"
+                }
+
+                st.info(mode_descriptions[selected_mode])
+
+            # 性能影响说明
+            st.markdown("**性能影响**")
+            if selected_mode == 'stream':
+                st.success("流式模式可以提供更快的首字响应时间，提升用户体验")
             elif selected_mode == 'non_stream':
-                st.warning("**非流式模式**: 无论用户请求如何，所有API响应都将等待完整生成后一次性返回。")
-            
+                st.warning("非流式模式会增加响应延迟，但能确保完整的响应内容")
+            else:
+                st.info("自动模式提供最佳的兼容性，推荐在大多数情况下使用")
+
             if st.form_submit_button("保存配置", type="primary", use_container_width=True):
                 update_data = {
                     "mode": selected_mode
                 }
-                
+
                 result = call_api('/admin/config/stream-mode', 'POST', data=update_data)
                 if result and result.get('success'):
                     st.success("配置已保存")
@@ -2792,6 +2917,7 @@ elif page == "系统设置":
 
     with tab4:
         st.markdown("#### 负载均衡策略")
+        st.markdown("选择API密钥的负载均衡算法，优化请求分发")
 
         # 获取当前策略
         all_configs = call_api('/admin/config')
@@ -2804,196 +2930,208 @@ elif page == "系统设置":
                     current_strategy = config['value']
                     break
 
+        # 状态概览
+        strategy_names = {
+            'adaptive': '自适应策略',
+            'least_used': '最少使用策略',
+            'round_robin': '轮询策略'
+        }
+
+        st.markdown(f'''
+        <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%); 
+                    border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h5 style="margin: 0; color: #374151; font-size: 1.1rem;">当前策略</h5>
+                    <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                        影响API密钥的选择和分发机制
+                    </p>
+                </div>
+                <div style="background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;">
+                    {strategy_names.get(current_strategy, '未知')}
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
         with st.form("load_balance_form"):
-            strategy_options = {
-                'adaptive': '自适应策略',
-                'least_used': '最少使用策略',
-                'round_robin': '轮流使用策略'
+            col1, col2 = st.columns([1, 1])
+
+            with col1:
+                st.markdown("**策略选择**")
+                strategy_options = {
+                    'adaptive': '自适应策略',
+                    'least_used': '最少使用策略',
+                    'round_robin': '轮询策略'
+                }
+
+                strategy = st.selectbox(
+                    "负载均衡策略",
+                    options=list(strategy_options.keys()),
+                    format_func=lambda x: strategy_options[x],
+                    index=list(strategy_options.keys()).index(current_strategy),
+                    help="选择API密钥的负载均衡算法"
+                )
+
+            with col2:
+                st.markdown("**策略特性**")
+                strategy_features = {
+                    'adaptive': "智能考虑响应时间、成功率和负载情况",
+                    'least_used': "确保所有密钥的使用频率均匀分布",
+                    'round_robin': "简单轮询，适合性能相近的密钥"
+                }
+
+                st.info(strategy_features[strategy])
+
+            # 详细说明
+            st.markdown("**策略说明**")
+            strategy_descriptions = {
+                'adaptive': "根据密钥的响应时间、成功率和当前负载智能选择最优密钥。推荐在密钥性能差异较大时使用。",
+                'least_used': "优先选择使用次数最少的密钥，确保所有密钥的使用均匀分布。适合需要均衡使用所有密钥的场景。",
+                'round_robin': "按顺序轮流使用密钥，算法简单高效。适合所有密钥性能相近的环境。"
             }
 
-            strategy = st.selectbox(
-                "选择负载均衡策略",
-                options=list(strategy_options.keys()),
-                format_func=lambda x: strategy_options[x],
-                index=list(strategy_options.keys()).index(current_strategy)
-            )
+            st.markdown(f"**{strategy_options[strategy]}**: {strategy_descriptions[strategy]}")
 
             if st.form_submit_button("保存策略", type="primary", use_container_width=True):
                 result = call_api('/admin/config', 'POST', {
                     'load_balance_strategy': strategy
                 })
                 if result and result.get('success'):
-                    st.success(f"策略已更新为: {strategy_options[strategy]}")
+                    st.success(f"负载均衡策略已更新为：{strategy_options[strategy]}")
+                    st.cache_data.clear()
+                    time.sleep(1)
+                    st.rerun()
 
     with tab5:  # 故障转移配置标签页
-        st.markdown("#### 快速故障转移配置")
+        st.markdown("#### 故障转移配置")
+        st.markdown("配置API密钥的故障转移策略，确保服务高可用")
 
         # 获取当前配置
         failover_config_data = get_cached_failover_config()
-        failover_stats_data = get_cached_failover_stats()
 
         if not failover_config_data or not failover_config_data.get('success'):
-            st.error("❌ 无法获取故障转移配置")
+            st.error("无法获取故障转移配置")
         else:
             current_config = failover_config_data.get('config', {})
             stats_info = failover_config_data.get('stats', {})
 
-            # 顶部状态概览
-            st.markdown("##### 📊 故障转移状态")
+            # 状态概览
+            fast_enabled = current_config.get('fast_failover_enabled', True)
+            max_attempts = current_config.get('max_key_attempts', 5)
 
-            col1, col2, col3, col4 = st.columns(4)
+            st.markdown(f'''
+            <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%); 
+                        border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h5 style="margin: 0; color: #374151; font-size: 1.1rem;">故障转移状态</h5>
+                        <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                            模式: {'快速转移' if fast_enabled else '传统重试'} | 
+                            最大尝试: {max_attempts} 次
+                        </p>
+                    </div>
+                    <div style="background: {'#10b981' if fast_enabled else '#f59e0b'}; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;">
+                        {'快速模式' if fast_enabled else '传统模式'}
+                    </div>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+
+            # 关键指标
+            col1, col2, col3 = st.columns(3)
 
             with col1:
-                # 快速故障转移状态
-                fast_enabled = current_config.get('fast_failover_enabled', True)
-                status_color = "#10b981" if fast_enabled else "#ef4444"
-                status_text = "快速模式" if fast_enabled else "传统模式"
-                status_icon = "⚡" if fast_enabled else "🐢"
-
-                st.markdown(f'''
-                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.2rem;">{status_icon}</span>
-                        <span style="font-weight: 600; color: #374151;">故障转移</span>
-                    </div>
-                    <div style="color: {status_color}; font-weight: 500; font-size: 1rem; text-align: center;">
-                        {status_text}
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
+                available_keys = stats_info.get('available_keys', 0)
+                st.metric(
+                    "可用密钥",
+                    f"{available_keys} 个",
+                    help="当前可用的API密钥数量"
+                )
 
             with col2:
-                # 最大尝试次数
-                max_attempts = current_config.get('max_key_attempts', 5)
-                available_keys = stats_info.get('available_keys', 0)
-
-                st.markdown(f'''
-                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="font-weight: 600; color: #374151;">
-                        尝试次数
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="color: #6366f1; font-weight: 500; font-size: 1.1rem;">
-                            最多 {max_attempts} 次
-                        </div>
-                        <div style="color: #6b7280; font-size: 0.875rem;">
-                            可用 {available_keys} 个Key
-                        </div>
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
+                healthy_keys = stats_info.get('healthy_keys', 0)
+                st.metric(
+                    "健康密钥",
+                    f"{healthy_keys} 个",
+                    delta=f"{healthy_keys - (available_keys - healthy_keys)} 个正常" if available_keys > 0 else None,
+                    help="当前健康状态的密钥数量"
+                )
 
             with col3:
-                # 健康Key数量
-                healthy_keys = stats_info.get('healthy_keys', 0)
-                health_color = "#10b981" if healthy_keys > 0 else "#ef4444"
-                health_icon = "💚" if healthy_keys > 0 else "❤️"
-
-                st.markdown(f'''
-                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.2rem;">{health_icon}</span>
-                        <span style="font-weight: 600; color: #374151;">健康Keys</span>
-                    </div>
-                    <div style="color: {health_color}; font-weight: 500; font-size: 1.1rem; text-align: center;">
-                        {healthy_keys} 个
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
-
-            with col4:
-                # 后台检测状态
-                bg_check = current_config.get('background_health_check', True)
-                bg_color = "#8b5cf6" if bg_check else "#6b7280"
-                bg_text = "已启用" if bg_check else "已禁用"
-                bg_icon = "🔍" if bg_check else "⏸️"
-
-                st.markdown(f'''
-                <div class="status-card-style" style="height: 100px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.2rem;">{bg_icon}</span>
-                        <span style="font-weight: 600; color: #374151;">后台检测</span>
-                    </div>
-                    <div style="color: {bg_color}; font-weight: 500; font-size: 1rem; text-align: center;">
-                        {bg_text}
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
+                expected_time = max_attempts * 2 if fast_enabled else max_attempts * 5
+                st.metric(
+                    "预期转移时间",
+                    f"≤ {expected_time} 秒",
+                    help="最坏情况下的故障转移时间"
+                )
 
             # 配置表单
-            st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
-            st.markdown("##### ⚙️ 故障转移策略配置")
+            st.markdown("##### 转移策略配置")
 
             with st.form("failover_config_form"):
                 col1, col2 = st.columns(2)
 
                 with col1:
-                    st.markdown("**核心策略**")
+                    st.markdown("**核心配置**")
 
                     # 快速故障转移开关
                     fast_failover_enabled = st.checkbox(
-                        "⚡ 启用快速故障转移",
+                        "启用快速故障转移",
                         value=current_config.get('fast_failover_enabled', True),
-                        help="启用后，失败的Key会立即切换到下一个，而不是重试"
+                        help="失败时立即切换到下一个密钥，而不是重试当前密钥"
                     )
 
                     # 最大Key尝试次数
                     max_key_attempts = st.slider(
-                        "🔄 最大Key尝试次数",
+                        "最大密钥尝试次数",
                         min_value=1,
                         max_value=min(20, available_keys) if available_keys > 0 else 20,
                         value=current_config.get('max_key_attempts', 5),
-                        help="单次请求最多尝试多少个不同的API Key"
+                        help="单次请求最多尝试的不同密钥数量"
                     )
 
                 with col2:
-                    st.markdown("**高级设置**")
+                    st.markdown("**高级配置**")
 
                     # 后台健康检测
                     background_health_check = st.checkbox(
-                        "🔍 启用后台健康检测",
+                        "启用后台健康检测",
                         value=current_config.get('background_health_check', True),
-                        help="Key失败后在后台进行健康检测"
+                        help="密钥失败后在后台进行健康状态检测"
                     )
 
                     # 健康检测延迟
                     health_check_delay = st.slider(
-                        "⏱️ 健康检测延迟 (秒)",
+                        "健康检测延迟 (秒)",
                         min_value=1,
                         max_value=60,
                         value=current_config.get('health_check_delay', 5),
-                        help="Key失败后多久开始后台健康检测"
+                        help="密钥失败后延迟多长时间开始健康检测"
                     )
 
-                # 策略说明
-                st.markdown("**策略说明：**")
+                # 配置预览
+                st.markdown("**配置预览**")
                 if fast_failover_enabled:
-                    strategy_desc = "🟢 **快速模式**：Key失败立即切换，无重试，最大化响应速度"
+                    st.success("快速模式：失败时立即切换密钥，最大化响应速度")
+                    expected_time = max_key_attempts * 2
+                    st.info(f"预计最坏情况转移时间：约 {expected_time} 秒")
                 else:
-                    strategy_desc = "🔵 **传统模式**：使用传统的重试机制，每个Key会多次重试"
-
-                st.info(strategy_desc)
-
-                # 性能预估
-                if fast_failover_enabled:
-                    expected_time = max_key_attempts * 2  # 估算：每次切换约2秒
-                    st.success(f"⚡ 预计最坏情况下的故障转移时间：约 {expected_time} 秒")
-                else:
-                    st.info("⏳ 传统模式下故障转移时间取决于网络条件和重试策略")
+                    st.info("传统模式：使用重试机制，适合网络不稳定的环境")
+                    st.warning("传统模式下转移时间取决于网络条件和重试策略")
 
                 # 提交按钮
                 col1, col2 = st.columns(2)
                 with col1:
                     save_config = st.form_submit_button(
-                        "💾 保存配置",
+                        "保存配置",
                         type="primary",
                         use_container_width=True
                     )
 
                 with col2:
-                    # 获取统计信息按钮
                     refresh_stats = st.form_submit_button(
-                        "📊 刷新统计",
+                        "刷新统计",
                         use_container_width=True
                     )
 
@@ -3008,213 +3146,149 @@ elif page == "系统设置":
 
                     result = update_failover_config(config_data)
                     if result and result.get('success'):
-                        st.success("✅ 故障转移配置保存成功")
-                        st.info("🔄 新配置将在下次请求时生效")
+                        st.success("故障转移配置已保存")
+                        st.info("新配置将在下次请求时生效")
                         st.cache_data.clear()
                         time.sleep(1)
                         st.rerun()
                     else:
-                        st.error("❌ 配置保存失败，请重试")
+                        st.error("配置保存失败，请重试")
 
                 if refresh_stats:
                     st.cache_data.clear()
                     st.rerun()
 
     with tab6:  # 自动清理标签页
-        st.markdown("#### 自动清理异常API Key")
-        st.markdown("智能识别并自动移除连续异常的API Key，确保服务质量和稳定性")
+        st.markdown("#### 自动清理配置")
+        st.markdown("智能识别并自动移除连续异常的API密钥，确保服务质量")
 
         # 获取当前配置和状态
         cleanup_status = get_cached_cleanup_status()
 
         if not cleanup_status or not cleanup_status.get('success'):
-            st.error("❌ 无法获取自动清理状态，请检查后端服务连接")
+            st.error("无法获取自动清理状态，请检查后端服务连接")
         else:
-            # === 顶部状态概览 ===
-            st.markdown("##### 📊 清理状态概览")
+            is_enabled = cleanup_status.get('auto_cleanup_enabled', False)
+            days_threshold = cleanup_status.get('days_threshold', 3)
+            at_risk_keys = cleanup_status.get('at_risk_keys', [])
 
-            col1, col2, col3, col4 = st.columns(4)
+            # 状态概览
+            st.markdown(f'''
+            <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); 
+                        border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h5 style="margin: 0; color: #374151; font-size: 1.1rem;">清理状态</h5>
+                        <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                            阈值: {days_threshold} 天 | 
+                            风险密钥: {len(at_risk_keys)} 个 | 
+                            执行时间: 每日 02:00 UTC
+                        </p>
+                    </div>
+                    <div style="background: {'#10b981' if is_enabled else '#6b7280'}; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;">
+                        {'已启用' if is_enabled else '已禁用'}
+                    </div>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+
+            # 关键指标
+            col1, col2, col3 = st.columns(3)
 
             with col1:
-                # 自动清理状态
-                is_enabled = cleanup_status.get('auto_cleanup_enabled', False)
-                status_color = "#10b981" if is_enabled else "#ef4444"
-                status_text = "已启用" if is_enabled else "已禁用"
-                status_icon = "🟢" if is_enabled else "🔴"
-
-                st.markdown(f'''
-                <div class="status-card-style" style="height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.2rem;">{status_icon}</span>
-                        <span style="font-weight: 600; color: #374151;">自动清理</span>
-                    </div>
-                    <div style="color: {status_color}; font-weight: 500; font-size: 1.1rem; text-align: center;">
-                        {status_text}
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
+                critical_keys = [k for k in at_risk_keys if k.get('consecutive_unhealthy_days', 0) >= days_threshold]
+                st.metric(
+                    "待清理密钥",
+                    f"{len(critical_keys)} 个",
+                    delta="下次清理" if len(critical_keys) > 0 else "无需清理",
+                    delta_color="inverse" if len(critical_keys) > 0 else "normal"
+                )
 
             with col2:
-                # 阈值配置
-                days_threshold = cleanup_status.get('days_threshold', 3)
-                min_checks = cleanup_status.get('min_checks_per_day', 5)
-
-                st.markdown(f'''
-                <div class="status-card-style" style="height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="font-weight: 600; color: #374151;">
-                        清理阈值
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="color: #6366f1; font-weight: 500; font-size: 1.1rem;">
-                            连续 {days_threshold} 天异常
-                        </div>
-                        <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">
-                            需日检≥{min_checks}次
-                        </div>
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
+                warning_keys = [k for k in at_risk_keys if k.get('consecutive_unhealthy_days', 0) < days_threshold]
+                st.metric(
+                    "风险密钥",
+                    f"{len(warning_keys)} 个",
+                    delta="需要关注" if len(warning_keys) > 0 else "状态良好",
+                    delta_color="inverse" if len(warning_keys) > 0 else "normal"
+                )
 
             with col3:
-                # 风险Keys数量
-                at_risk_keys = cleanup_status.get('at_risk_keys', [])
-                risk_count = len(at_risk_keys)
-                risk_color = "#ef4444" if risk_count > 0 else "#10b981"
-                risk_icon = "⚠️" if risk_count > 0 else "✅"
+                min_checks = cleanup_status.get('min_checks_per_day', 5)
+                st.metric(
+                    "最少检测次数",
+                    f"{min_checks} 次/天",
+                    help="密钥每日需要达到的最少检测次数"
+                )
 
-                st.markdown(f'''
-                <div class="status-card-style" style="height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.2rem;">{risk_icon}</span>
-                        <span style="font-weight: 600; color: #374151;">风险Keys</span>
-                    </div>
-                    <div style="color: {risk_color}; font-weight: 500; font-size: 1.1rem; text-align: center;">
-                        {risk_count} 个
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
-
-            with col4:
-                # 下次清理时间
-                next_cleanup = "每日 02:00 UTC"
-
-                st.markdown(f'''
-                <div class="status-card-style" style="height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="font-weight: 600; color: #374151;">
-                        下次清理
-                    </div>
-                    <div style="color: #8b5cf6; font-weight: 500; font-size: 1.1rem; text-align: center;">
-                        🕐 {next_cleanup}
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
-
-            # === 风险预警区域 ===
+            # 风险预警区域
             if at_risk_keys:
-                st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
+                st.markdown("##### 风险密钥预警")
 
-                # 风险等级统计
-                critical_keys = [k for k in at_risk_keys if k.get('consecutive_unhealthy_days', 0) >= days_threshold]
-                warning_keys = [k for k in at_risk_keys if k.get('consecutive_unhealthy_days', 0) < days_threshold]
+                if len(critical_keys) > 0:
+                    st.error(f"🔥 {len(critical_keys)} 个密钥将在下次清理时被移除")
 
-                col1, col2 = st.columns([2, 1])
-
-                with col1:
-                    st.markdown(f"##### ⚠️ 风险API Key预警 ({len(at_risk_keys)} 个)")
-
-                    if critical_keys:
-                        st.error(f"🔥 {len(critical_keys)} 个Key将在下次清理时被移除")
-
-                    if warning_keys:
-                        st.warning(f"⚠️ {len(warning_keys)} 个Key处于风险状态")
-
-                with col2:
-                    # 快速操作按钮
-                    if st.button("🔄 立即检测健康状态", use_container_width=True):
-                        with st.spinner("检测中..."):
-                            result = check_all_keys_health()
-                            if result and result.get('success'):
-                                st.success("✅ " + result['message'])
-                                st.cache_data.clear()
-                                time.sleep(1)
-                                st.rerun()
-                            else:
-                                st.error("❌ 健康检测失败")
+                if len(warning_keys) > 0:
+                    st.warning(f"⚠️ {len(warning_keys)} 个密钥处于风险状态")
 
                 # 风险Keys详细列表
-                st.markdown("**风险Keys详情：**")
-
-                # 表头
-                st.markdown('''
-                <div style="display: grid; grid-template-columns: 0.5fr 2.5fr 1fr 1fr 1.5fr; gap: 1rem; padding: 0.75rem 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
-                    <div>ID</div>
-                    <div>API Key</div>
-                    <div>异常天数</div>
-                    <div>风险等级</div>
-                    <div>预计清理时间</div>
-                </div>
-                ''', unsafe_allow_html=True)
-
-                # 数据行
-                for key in at_risk_keys:
-                    key_id = key.get('id', 'N/A')
-                    key_preview = key.get('key', 'Unknown')
-                    consecutive_days = key.get('consecutive_unhealthy_days', 0)
-                    days_until_removal = key.get('days_until_removal', 0)
-
-                    # 风险等级判断
-                    if consecutive_days >= days_threshold:
-                        risk_level = "🔥 极高"
-                        risk_color = "#ef4444"
-                        time_text = "下次清理"
-                        time_color = "#ef4444"
-                    elif consecutive_days >= days_threshold - 1:
-                        risk_level = "🟡 高"
-                        risk_color = "#f59e0b"
-                        time_text = f"{days_until_removal}天后"
-                        time_color = "#f59e0b"
-                    else:
-                        risk_level = "🟡 中"
-                        risk_color = "#f59e0b"
-                        time_text = f"{days_until_removal}天后"
-                        time_color = "#6b7280"
-
-                    st.markdown(f'''
-                    <div style="display: grid; grid-template-columns: 0.5fr 2.5fr 1fr 1fr 1.5fr; gap: 1rem; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; margin-bottom: 0.5rem; align-items: center;">
-                        <div style="font-weight: 500;">#{key_id}</div>
-                        <div style="font-family: monospace; background: rgba(255, 255, 255, 0.3); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem;">{key_preview}</div>
-                        <div style="text-align: center; font-weight: 500; color: {risk_color};">{consecutive_days}天</div>
-                        <div style="color: {risk_color}; font-weight: 500;">{risk_level}</div>
-                        <div style="color: {time_color}; font-weight: 500;">{time_text}</div>
+                with st.expander("查看风险密钥详情", expanded=len(critical_keys) > 0):
+                    # 表头
+                    st.markdown('''
+                    <div style="display: grid; grid-template-columns: 0.5fr 2.5fr 1fr 1fr 1.5fr; gap: 1rem; 
+                                padding: 0.75rem 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; 
+                                font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+                        <div>ID</div>
+                        <div>API Key</div>
+                        <div>异常天数</div>
+                        <div>风险等级</div>
+                        <div>预计清理时间</div>
                     </div>
                     ''', unsafe_allow_html=True)
 
-                # 风险说明
-                with st.expander("🔍 查看风险评估详情"):
-                    st.markdown(f"""
-                    **风险评估标准：**
-                    - 🟢 **安全**：连续异常天数 < {days_threshold - 1} 天
-                    - 🟡 **警告**：连续异常天数 = {days_threshold - 1} 天（距离清理1天）
-                    - 🔥 **极高**：连续异常天数 ≥ {days_threshold} 天（下次清理将被移除）
+                    # 数据行
+                    for key in at_risk_keys:
+                        key_id = key.get('id', 'N/A')
+                        key_preview = key.get('key', 'Unknown')
+                        consecutive_days = key.get('consecutive_unhealthy_days', 0)
+                        days_until_removal = key.get('days_until_removal', 0)
 
-                    **异常判定标准：**
-                    - 单日成功率 < 10%
-                    - 单日检测次数 ≥ {min_checks} 次
-                    - 连续多天满足上述条件
+                        # 风险等级判断
+                        if consecutive_days >= days_threshold:
+                            risk_level = "🔥 极高"
+                            risk_color = "#ef4444"
+                            time_text = "下次清理"
+                            time_color = "#ef4444"
+                        elif consecutive_days >= days_threshold - 1:
+                            risk_level = "⚠️ 高"
+                            risk_color = "#f59e0b"
+                            time_text = f"{days_until_removal}天后"
+                            time_color = "#f59e0b"
+                        else:
+                            risk_level = "🟡 中"
+                            risk_color = "#f59e0b"
+                            time_text = f"{days_until_removal}天后"
+                            time_color = "#6b7280"
 
-                    **保护机制：**
-                    - 自动保留至少1个健康Key
-                    - 检测次数不足的Key不会被误删
-                    - 被清理的Key可手动恢复
-                    """)
+                        st.markdown(f'''
+                        <div style="display: grid; grid-template-columns: 0.5fr 2.5fr 1fr 1fr 1.5fr; gap: 1rem; 
+                                    padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.4); 
+                                    border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; 
+                                    margin-bottom: 0.5rem; align-items: center;">
+                            <div style="font-weight: 500;">#{key_id}</div>
+                            <div style="font-family: monospace; background: rgba(255, 255, 255, 0.3); 
+                                        padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem;">{key_preview}</div>
+                            <div style="text-align: center; font-weight: 500; color: {risk_color};">{consecutive_days}天</div>
+                            <div style="color: {risk_color}; font-weight: 500;">{risk_level}</div>
+                            <div style="color: {time_color}; font-weight: 500;">{time_text}</div>
+                        </div>
+                        ''', unsafe_allow_html=True)
 
             else:
-                # 无风险状态
-                st.success("✅ 当前所有API Key状态良好，无清理风险")
+                st.success("✅ 所有密钥状态良好，无需清理")
 
-            # === 配置管理区域 ===
-            st.markdown('<hr style="margin: 2rem 0;">', unsafe_allow_html=True)
-            st.markdown("##### ⚙️ 清理配置管理")
+            # 配置管理区域
+            st.markdown("##### 清理配置")
 
             # 配置表单
             with st.form("auto_cleanup_config_form"):
@@ -3224,25 +3298,25 @@ elif page == "系统设置":
                     st.markdown("**基础设置**")
 
                     cleanup_enabled = st.checkbox(
-                        "🔧 启用自动清理",
+                        "启用自动清理",
                         value=cleanup_status.get('auto_cleanup_enabled', False),
-                        help="启用后将在每日凌晨2点自动检查并移除连续异常的API Key"
+                        help="启用后将在每日凌晨2点自动检查并移除连续异常的密钥"
                     )
 
                     days_threshold = st.slider(
-                        "📅 连续异常天数阈值",
+                        "连续异常天数阈值",
                         min_value=1,
                         max_value=10,
                         value=cleanup_status.get('days_threshold', 3),
-                        help="连续异常超过此天数的Key将被自动移除"
+                        help="连续异常超过此天数的密钥将被自动移除"
                     )
 
                     min_checks_per_day = st.slider(
-                        "🔍 每日最少检测次数",
+                        "每日最少检测次数",
                         min_value=1,
                         max_value=50,
                         value=cleanup_status.get('min_checks_per_day', 5),
-                        help="只有每天检测次数达到此值的Key才会被纳入清理考虑，避免因检测不足导致误删"
+                        help="只有检测次数达到此值的密钥才会被纳入清理考虑"
                     )
 
                 with col2:
@@ -3254,33 +3328,33 @@ elif page == "系统设置":
                             [k for k in at_risk_keys if k.get('consecutive_unhealthy_days', 0) >= days_threshold])
 
                         if estimated_removals > 0:
-                            st.error(f"⚠️ 当前配置下将清理 {estimated_removals} 个Key")
+                            st.error(f"当前配置将清理 {estimated_removals} 个密钥")
                         else:
-                            st.success("✅ 当前配置下无Key需要清理")
+                            st.success("当前配置下无密钥需要清理")
 
-                        # 清理时间提醒
-                        st.info("🕐 清理执行时间：每天凌晨 02:00 UTC")
-
-                        # 紧急情况处理
-                        if estimated_removals > 0:
-                            st.warning("💡 如需立即处理异常Key，可使用下方「立即执行清理」按钮")
+                        st.info("执行时间：每天凌晨 02:00 UTC")
                     else:
-                        st.info("❌ 自动清理已禁用")
+                        st.info("自动清理已禁用")
 
-                # 操作按钮区域
-                st.markdown("**操作选项**")
+                    # 安全保障
+                    st.markdown("**安全保障**")
+                    st.caption("• 始终保留至少1个健康密钥")
+                    st.caption("• 检测次数不足的密钥不会被误删")
+                    st.caption("• 被清理的密钥可手动恢复")
+
+                # 操作按钮
                 col1, col2 = st.columns(2)
 
                 with col1:
                     save_config = st.form_submit_button(
-                        "💾 保存配置",
+                        "保存配置",
                         type="primary",
                         use_container_width=True
                     )
 
                 with col2:
                     manual_cleanup = st.form_submit_button(
-                        "🧹 立即执行清理",
+                        "立即执行清理",
                         use_container_width=True
                     )
 
@@ -3294,109 +3368,178 @@ elif page == "系统设置":
 
                     result = update_cleanup_config(config_data)
                     if result and result.get('success'):
-                        st.success("✅ 配置保存成功")
-                        st.info("⏰ 新配置将在下次定时清理时生效")
+                        st.success("配置已保存")
+                        st.info("新配置将在下次定时清理时生效")
                         st.cache_data.clear()
                         time.sleep(1)
                         st.rerun()
                     else:
-                        st.error("❌ 配置保存失败，请重试")
+                        st.error("配置保存失败，请重试")
 
                 if manual_cleanup:
                     if at_risk_keys:
-                        # 执行前确认
-                        st.warning("⚠️ 即将执行清理操作，这将影响以下Keys：")
                         critical_keys = [k for k in at_risk_keys if
                                          k.get('consecutive_unhealthy_days', 0) >= days_threshold]
 
-                        for key in critical_keys:
-                            st.write(f"- Key #{key.get('id')}: {key.get('key')}")
+                        if critical_keys:
+                            st.warning("即将清理以下密钥：")
+                            for key in critical_keys:
+                                st.write(f"• Key #{key.get('id')}: {key.get('key')}")
 
-                        with st.spinner("执行清理中...请稍候"):
-                            result = manual_cleanup()
-                            if result and result.get('success'):
-                                st.success("✅ 手动清理已完成")
-                                st.info("🔄 建议刷新页面查看最新状态")
-                                st.cache_data.clear()
-                                time.sleep(1)
-                                st.rerun()
-                            else:
-                                st.error("❌ 清理执行失败")
+                            with st.spinner("执行清理中..."):
+                                result = manual_cleanup()
+                                if result and result.get('success'):
+                                    st.success("手动清理已完成")
+                                    st.cache_data.clear()
+                                    time.sleep(1)
+                                    st.rerun()
+                                else:
+                                    st.error("清理执行失败")
+                        else:
+                            st.info("没有达到清理条件的密钥")
                     else:
-                        st.info("✅ 当前无需清理的Keys")
+                        st.info("当前无需清理的密钥")
 
-            # 规则说明
-            with st.expander("📋 自动清理规则详细说明"):
+            # 详细规则说明
+            with st.expander("详细规则说明"):
                 st.markdown("""
-                ### 🎯 清理触发条件
+                ### 清理触发条件
 
-                一个API Key会被自动清理，必须**同时满足**以下所有条件：
+                密钥被自动清理需要**同时满足**以下条件：
+                - 连续异常天数 ≥ 设定阈值
+                - 每日检测次数 ≥ 最少检测次数
+                - 单日成功率 < 10%
+                - 自动清理功能已启用
 
-                1. **连续异常天数** ≥ 设定阈值（默认3天）
-                2. **每日检测次数** ≥ 最少检测次数（默认5次）
-                3. **异常判定标准**：单日成功率 < 10%
-                4. **自动清理功能已启用**
+                ### 安全保护机制
 
-                ### 🛡️ 安全保护机制
+                - **保留策略**: 始终保留至少1个健康密钥
+                - **检测保护**: 检测次数不足的密钥不会被清理
+                - **软删除**: 被清理的密钥只是禁用，可手动恢复
+                - **历史保存**: 保留所有检测历史用于问题排查
 
-                - **保留策略**：始终保留至少1个健康的API Key，确保服务不中断
-                - **检测保护**：检测次数不足的Key不会被清理，避免因监控数据不足导致误删
-                - **软删除**：被清理的Key只是禁用状态，数据仍保留，可随时手动恢复
-                - **历史保存**：所有健康检测历史都会保留，便于问题排查
+                ### 建议配置
 
-                ### ⏰ 执行时间
-
-                - **定时清理**：每天凌晨 02:00 UTC 自动执行
-                - **手动清理**：管理员可随时手动触发清理操作
-                - **实时监控**：每小时进行健康检测，及时发现异常
-
-                ### 🔄 恢复方法
-
-                1. **快速恢复**：在密钥管理页面找到被禁用的Key，点击「激活」按钮
-                2. **重新添加**：如果Key已删除，可重新添加相同的API Key
-                3. **批量操作**：支持批量恢复多个被误删的Key
-
-                ### 📊 监控指标
-
-                - **成功率**：API请求成功的比例
-                - **响应时间**：API响应的平均时间
-                - **连续失败次数**：连续失败的请求数量
-                - **每日检测次数**：系统每天对Key进行的健康检测次数
-
-                ### ⚙️ 建议配置
-
-                - **保守配置**：阈值 5-7 天，适合稳定环境
-                - **激进配置**：阈值 2-3 天，适合对质量要求极高的场景
-                - **宽松配置**：阈值 7-10 天，适合测试环境或Key资源紧张时
+                - **保守**: 阈值 5-7 天，适合稳定环境
+                - **标准**: 阈值 3-5 天，适合大多数场景
+                - **激进**: 阈值 1-3 天，适合对质量要求极高的场景
                 """)
 
-            # 底部提示
-            st.markdown('<hr style="margin: 1.5rem 0;">', unsafe_allow_html=True)
-
-            # 根据当前状态给出相应提示
-            if not cleanup_status.get('auto_cleanup_enabled', False):
-                st.info("💡 **提示**：当前自动清理功能已禁用。启用后可自动维护API Key质量，提高服务稳定性。")
-            elif len(at_risk_keys) > 0:
-                st.warning("⚠️ **注意**：检测到风险API Key，建议及时处理以维护服务质量。")
-            else:
-                st.success("✅ **状态良好**：所有API Key运行正常，自动清理功能正在守护您的服务质量。")
-
     with tab7:
-        st.markdown("#### 📊 系统信息")
+        st.markdown("#### 系统信息")
+        st.markdown("查看系统运行状态和资源使用情况")
+
+        # 系统概览
+        python_version = status_data.get('python_version', 'Unknown').split()[0]
+        version = status_data.get('version', '1.3.0')
+        uptime_hours = status_data.get('uptime_seconds', 0) // 3600
+
+        st.markdown(f'''
+        <div style="background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(75, 85, 99, 0.1) 100%); 
+                    border: 1px solid rgba(107, 114, 128, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h5 style="margin: 0; color: #374151; font-size: 1.1rem;">系统状态</h5>
+                    <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                        版本: {version} | Python: {python_version} | 运行时间: {uptime_hours} 小时
+                    </p>
+                </div>
+                <div style="background: #10b981; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;">
+                    运行中
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
 
         col1, col2 = st.columns(2)
 
         with col1:
             st.markdown("##### 服务信息")
-            st.text(f"Python: {status_data.get('python_version', 'Unknown').split()[0]}")
-            st.text(f"版本: {status_data.get('version', '1.3.0')}")
-            st.text(f"模型: {', '.join(status_data.get('models', []))}")
+
+            # 服务信息表格
+            service_info = {
+                "Python版本": python_version,
+                "系统版本": version,
+                "运行时间": f"{uptime_hours} 小时",
+                "支持模型": len(status_data.get('models', [])),
+                "API端点": f"{API_BASE_URL}"
+            }
+
+            for key, value in service_info.items():
+                st.markdown(f"**{key}**: {value}")
 
         with col2:
             st.markdown("##### 资源使用")
-            st.text(f"内存: {status_data.get('memory_usage_mb', 0):.1f} MB")
-            st.text(f"CPU: {status_data.get('cpu_percent', 0):.1f}%")
-            st.text(f"运行: {status_data.get('uptime_seconds', 0) // 3600} 小时")
+
+            # 资源使用指标
+            memory_mb = status_data.get('memory_usage_mb', 0)
+            cpu_percent = status_data.get('cpu_percent', 0)
+
+            # 内存使用
+            st.metric(
+                "内存使用",
+                f"{memory_mb:.1f} MB",
+                delta=f"{memory_mb / 1024:.1f} GB" if memory_mb > 1024 else None
+            )
+
+            # CPU使用
+            st.metric(
+                "CPU使用率",
+                f"{cpu_percent:.1f}%",
+                delta="正常" if cpu_percent < 80 else "偏高",
+                delta_color="normal" if cpu_percent < 80 else "inverse"
+            )
+
+        # 支持的模型列表
+        st.markdown("##### 支持的模型")
+        models = status_data.get('models', [])
+        if models:
+            # 创建模型网格布局
+            cols = st.columns(3)
+            for i, model in enumerate(models):
+                with cols[i % 3]:
+                    st.markdown(f'''
+                    <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); 
+                                border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; text-align: center;">
+                        <div style="font-weight: 500; color: #1e40af;">{model}</div>
+                    </div>
+                    ''', unsafe_allow_html=True)
+        else:
+            st.info("暂无支持的模型信息")
+
+        # 健康检查链接
+        st.markdown("##### 快速链接")
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown(f'''
+            <a href="{API_BASE_URL}/health" target="_blank" style="display: block; text-decoration: none;">
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); 
+                            border-radius: 8px; padding: 1rem; text-align: center; color: #065f46; font-weight: 500;">
+                    健康检查
+                </div>
+            </a>
+            ''', unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f'''
+            <a href="{API_BASE_URL}/docs" target="_blank" style="display: block; text-decoration: none;">
+                <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); 
+                            border-radius: 8px; padding: 1rem; text-align: center; color: #4338ca; font-weight: 500;">
+                    API文档
+                </div>
+            </a>
+            ''', unsafe_allow_html=True)
+
+        with col3:
+            st.markdown(f'''
+            <a href="{API_BASE_URL}/status" target="_blank" style="display: block; text-decoration: none;">
+                <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); 
+                            border-radius: 8px; padding: 1rem; text-align: center; color: #6d28d9; font-weight: 500;">
+                    系统状态
+                </div>
+            </a>
+            ''', unsafe_allow_html=True)
 
 # --- 页脚 ---
 st.markdown(
