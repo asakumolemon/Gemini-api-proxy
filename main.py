@@ -3114,11 +3114,8 @@ elif page == "系统设置":
                 st.markdown("**配置预览**")
                 if fast_failover_enabled:
                     st.success("快速模式：失败时立即切换密钥，最大化响应速度")
-                    expected_time = max_key_attempts * 2
-                    st.info(f"预计最坏情况转移时间：约 {expected_time} 秒")
                 else:
                     st.info("传统模式：使用重试机制，适合网络不稳定的环境")
-                    st.warning("传统模式下转移时间取决于网络条件和重试策略")
 
                 # 提交按钮
                 col1, col2 = st.columns(2)
