@@ -310,6 +310,10 @@ class ChatCompletionRequest(BaseModel):
     user: Optional[str] = None
     thinking_config: Optional[ThinkingConfig] = None
 
+    # OpenAI Compatible 工具调用字段
+    tools: Optional[List[Dict[str, Any]]] = None
+    tool_choice: Optional[Union[str, Dict[str, Any]]] = None
+
     class Config:
         extra = "allow"
 
@@ -1418,7 +1422,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Gemini API Proxy",
     description="A high-performance proxy for Gemini API with OpenAI compatibility, optimized multimodal support, auto keep-alive, auto-cleanup and anti-automation detection",
-    version="1.3.0",
+    version="1.3.1",
     lifespan=lifespan
 )
 
@@ -2593,7 +2597,7 @@ async def root():
     return {
         "service": "Gemini API Proxy",
         "status": "running",
-        "version": "1.3.0",
+        "version": "1.3.1",
         "features": ["Gemini 2.5 Multimodal", "OpenAI Compatible", "Smart Polling", "Auto Keep-Alive", "Auto-Cleanup",
                      "Anti-Automation Detection", "Fast Failover"],
         "keep_alive": keep_alive_enabled,
@@ -2618,7 +2622,7 @@ async def health_check():
         "environment": "render" if os.getenv('RENDER_EXTERNAL_URL') else "local",
         "uptime_seconds": int(uptime),
         "request_count": request_count,
-        "version": "1.3.0",
+        "version": "1.3.1",
         "multimodal_support": "Gemini 2.5 Optimized",
         "keep_alive_enabled": keep_alive_enabled,
         "auto_cleanup_enabled": db.get_auto_cleanup_config()['enabled'],
@@ -2652,7 +2656,7 @@ async def get_status():
     return {
         "service": "Gemini API Proxy",
         "status": "running",
-        "version": "1.3.0",
+        "version": "1.3.1",
         "render_url": os.getenv('RENDER_EXTERNAL_URL'),
         "python_version": sys.version,
         "models": db.get_supported_models(),
@@ -2707,7 +2711,7 @@ async def api_v1_info():
 
     return {
         "service": "Gemini API Proxy",
-        "version": "1.3.0",
+        "version": "1.3.1",
         "api_version": "v1",
         "compatibility": "OpenAI API v1",
         "description": "A high-performance proxy for Gemini API with OpenAI compatibility, optimized multimodal support, auto keep-alive, auto-cleanup, anti-automation detection, and fast failover",

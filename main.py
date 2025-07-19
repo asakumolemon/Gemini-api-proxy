@@ -2039,7 +2039,7 @@ with st.sidebar:
     <div class="sidebar-footer">
         <div class="sidebar-footer-content">
             <div class="sidebar-footer-item">
-                <span>版本 v1.3.0</span>
+                <span>版本 v1.3.1</span>
             </div>
             <div class="sidebar-footer-item">
                 <a href="{API_BASE_URL}/docs" target="_blank" class="sidebar-footer-link">API 文档</a>
@@ -2834,7 +2834,7 @@ elif page == "系统设置":
 
     with tab3:
         st.markdown("#### 流式模式配置")
-        st.markdown("控制API响应的流式输出行为，优化用户体验")
+        st.markdown("控制API响应的流式输出行为")
 
         stream_mode_config = stats_data.get('stream_mode_config', {})
         current_mode = stream_mode_config.get('mode', 'auto')
@@ -2917,7 +2917,7 @@ elif page == "系统设置":
 
     with tab4:
         st.markdown("#### 负载均衡策略")
-        st.markdown("选择API密钥的负载均衡算法，优化请求分发")
+        st.markdown("选择API密钥的负载均衡算法")
 
         # 获取当前策略
         all_configs = call_api('/admin/config')
@@ -3005,7 +3005,7 @@ elif page == "系统设置":
 
     with tab5:  # 故障转移配置标签页
         st.markdown("#### 故障转移配置")
-        st.markdown("配置API密钥的故障转移策略，确保服务高可用")
+        st.markdown("配置API密钥的故障转移策略")
 
         # 获取当前配置
         failover_config_data = get_cached_failover_config()
@@ -3157,7 +3157,7 @@ elif page == "系统设置":
 
     with tab6:  # 自动清理标签页
         st.markdown("#### 自动清理配置")
-        st.markdown("智能识别并自动移除连续异常的API密钥，确保服务质量")
+        st.markdown("智能识别并自动移除连续异常的API密钥")
 
         # 获取当前配置和状态
         cleanup_status = get_cached_cleanup_status()
@@ -3428,7 +3428,7 @@ elif page == "系统设置":
 
         # 系统概览
         python_version = status_data.get('python_version', 'Unknown').split()[0]
-        version = status_data.get('version', '1.3.0')
+        version = status_data.get('version', '1.3.1')
         uptime_hours = status_data.get('uptime_seconds', 0) // 3600
 
         st.markdown(f'''
@@ -3540,7 +3540,7 @@ elif page == "系统设置":
 
     with tab8:
         st.markdown("#### 防检测配置")
-        st.markdown("管理自动化检测防护功能，提升API调用的稳定性")
+        st.markdown("管理自动化检测防护功能")
 
         # 获取防检测配置
         anti_detection_data = call_api('/admin/config/anti-detection', 'GET')
@@ -3667,7 +3667,7 @@ st.markdown(
     <div style='text-align: center; color: rgba(255, 255, 255, 0.7); font-size: 0.8125rem; margin-top: 4rem; padding: 2rem 0; border-top: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(255, 255, 255, 0.05); border-radius: 16px 16px 0 0; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);'>
         <a href='{API_BASE_URL}/health' target='_blank' style='color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: all 0.3s ease; padding: 0.25rem 0.5rem; border-radius: 6px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);' onmouseover='this.style.color="white"; this.style.background="rgba(255, 255, 255, 0.1)"; this.style.textShadow="0 0 8px rgba(255, 255, 255, 0.5)";' onmouseout='this.style.color="rgba(255, 255, 255, 0.8)"; this.style.background="transparent"; this.style.textShadow="none";'>健康检查</a> · 
         <span style='color: rgba(255, 255, 255, 0.6);'>{API_BASE_URL}</span> ·
-        <span style='color: rgba(255, 255, 255, 0.6);'>v1.3</span>
+        <span style='color: rgba(255, 255, 255, 0.6);'>v1.3.1</span>
     </div>
     """,
     unsafe_allow_html=True
