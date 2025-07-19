@@ -1816,14 +1816,16 @@ def extract_thoughts_and_content(gemini_response: Dict) -> tuple[str, str]:
         parts = candidate.get("content", {}).get("parts", [])
 
         for part in parts:
-            if "text" in part:
-                if part.get("thought", False):
+            if "text" in part and part["text"]:  # 确保文本不为空
+                is_thought = part.get("thought", False)
+
+                if is_thought:
                     thoughts += part["text"]
                 else:
+                    # 所有非思考内容都添加到 content
                     content += part["text"]
 
     return thoughts, content
-
 
 def gemini_to_openai(gemini_response: Dict, request: ChatCompletionRequest, usage_info: Dict = None) -> Dict:
     """将Gemini响应转换为OpenAI格式"""
