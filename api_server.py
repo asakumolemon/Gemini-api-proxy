@@ -691,13 +691,25 @@ async def make_request_with_fast_failover(
             logger.info(f"Fast failover attempt {attempt + 1}: Using key #{key_info['id']}")
 
             try:
+                # 确定超时时间：工具调用或快速响应模式使用60秒，其他使用配置值
+                has_tool_calls = bool(openai_request.tools or openai_request.tool_choice)
+                is_fast_failover = await should_use_fast_failover()
+                if has_tool_calls:
+                    timeout_seconds = 60.0  # 工具调用强制60秒超时
+                    logger.info("Using extended 60s timeout for tool calls")
+                elif is_fast_failover:
+                    timeout_seconds = 60.0  # 快速响应模式使用60秒超时
+                    logger.info("Using extended 60s timeout for fast response mode")
+                else:
+                    timeout_seconds = float(db.get_config('request_timeout', '60'))
+                
                 # 单次尝试，失败立即切换
                 response = await make_gemini_request_single_attempt(
                     key_info['key'],
                     key_info['id'],
                     gemini_request,
                     model_name,
-                    timeout=float(db.get_config('request_timeout', '60'))
+                    timeout=timeout_seconds
                 )
 
                 logger.info(f"✅ Request successful with key #{key_info['id']} on attempt {attempt + 1}")
@@ -784,7 +796,18 @@ async def stream_gemini_response_single_attempt(
     单次流式请求尝试，失败立即抛出异常
     """
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:streamGenerateContent?alt=sse"
-    timeout = float(db.get_config('request_timeout', '60'))
+    
+    # 确定超时时间：工具调用或快速响应模式使用60秒，其他使用配置值
+    has_tool_calls = bool(openai_request.tools or openai_request.tool_choice)
+    is_fast_failover = await should_use_fast_failover()
+    if has_tool_calls:
+        timeout = 60.0  # 工具调用强制60秒超时
+        logger.info("Using extended 60s timeout for tool calls in streaming")
+    elif is_fast_failover:
+        timeout = 60.0  # 快速响应模式使用60秒超时
+        logger.info("Using extended 60s timeout for fast response mode in streaming")
+    else:
+        timeout = float(db.get_config('request_timeout', '60'))
 
     logger.info(f"Starting single stream request to: {url}")
 
@@ -1661,14 +1684,60 @@ def process_multimodal_content(item: Dict) -> Optional[Dict]:
         return None
 
 
+def estimate_token_count(text: str) -> int:
+    """
+    估算文本的Token数量（简单估算：1个Token约等于4个字符）
+    """
+    return len(text) // 4
+
+
+def should_apply_anti_detection(request: ChatCompletionRequest, enable_anti_detection: bool = True) -> bool:
+    """
+    判断是否应该应用防检测
+    """
+    if not enable_anti_detection:
+        return False
+    
+    # 检查全局防检测开关
+    if not db.get_config('anti_detection_enabled', 'true').lower() == 'true':
+        return False
+    
+    # 检查是否有工具调用且配置为禁用
+    disable_for_tools = db.get_config('anti_detection_disable_for_tools', 'true').lower() == 'true'
+    if disable_for_tools and (request.tools or request.tool_choice):
+        logger.info("Anti-detection disabled for tool calls")
+        return False
+    
+    # 检查Token阈值
+    token_threshold = int(db.get_config('anti_detection_token_threshold', '5000'))
+    total_tokens = 0
+    
+    for msg in request.messages:
+        if isinstance(msg.content, str):
+            total_tokens += estimate_token_count(msg.content)
+        elif isinstance(msg.content, list):
+            for item in msg.content:
+                if isinstance(item, str):
+                    total_tokens += estimate_token_count(item)
+                elif isinstance(item, dict) and item.get('type') == 'text':
+                    total_tokens += estimate_token_count(item.get('text', ''))
+    
+    if total_tokens < token_threshold:
+        logger.info(f"Anti-detection skipped: token count {total_tokens} below threshold {token_threshold}")
+        return False
+    
+    logger.info(f"Anti-detection enabled: token count {total_tokens} exceeds threshold {token_threshold}")
+    return True
+
+
 def openai_to_gemini(request: ChatCompletionRequest, enable_anti_detection: bool = True) -> Dict:
     """
     将OpenAI格式转换为Gemini格式
     """
     contents = []
 
-    # 检查是否启用防检测（可以通过配置控制）
-    anti_detection_enabled = enable_anti_detection and db.get_config('anti_detection_enabled', 'true').lower() == 'true'
+    # 检查是否应用防检测
+    anti_detection_enabled = should_apply_anti_detection(request, enable_anti_detection)
 
     for msg in request.messages:
         parts = []
@@ -1898,10 +1967,12 @@ async def make_gemini_request_with_retry(
         key_id: int,
         gemini_request: Dict,
         model_name: str,
-        max_retries: int = 3
+        max_retries: int = 3,
+        timeout: float = None
 ) -> Dict:
     """带重试的Gemini API请求，记录性能指标"""
-    timeout = float(db.get_config('request_timeout', '60'))
+    if timeout is None:
+        timeout = float(db.get_config('request_timeout', '60'))
 
     for attempt in range(max_retries):
         start_time = time.time()
@@ -1984,6 +2055,18 @@ async def make_request_with_failover(
 
     logger.info(f"Starting failover with {max_key_attempts} key attempts for model {model_name}")
 
+    # 确定超时时间：工具调用或快速响应模式使用60秒，其他使用配置值
+    has_tool_calls = bool(openai_request.tools or openai_request.tool_choice)
+    is_fast_failover = await should_use_fast_failover()
+    if has_tool_calls:
+        timeout_seconds = 60.0  # 工具调用强制60秒超时
+        logger.info("Using extended 60s timeout for tool calls in traditional failover")
+    elif is_fast_failover:
+        timeout_seconds = 60.0  # 快速响应模式使用60秒超时
+        logger.info("Using extended 60s timeout for fast response mode in traditional failover")
+    else:
+        timeout_seconds = float(db.get_config('request_timeout', '60'))
+
     last_error = None
     failed_keys = []
 
@@ -2009,7 +2092,8 @@ async def make_request_with_failover(
                     key_info['id'],
                     gemini_request,
                     model_name,
-                    max_retries=2
+                    max_retries=2,
+                    timeout=timeout_seconds
                 )
 
                 logger.info(f"✅ Request successful with key #{key_info['id']} on attempt {attempt + 1}")
@@ -2210,7 +2294,19 @@ async def stream_gemini_response(
 ) -> AsyncGenerator[bytes, None]:
     """处理Gemini的流式响应，记录性能指标"""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:streamGenerateContent?alt=sse"
-    timeout = float(db.get_config('request_timeout', '60'))
+    
+    # 确定超时时间：工具调用或快速响应模式使用60秒，其他使用配置值
+    has_tool_calls = bool(openai_request.tools or openai_request.tool_choice)
+    is_fast_failover = await should_use_fast_failover()
+    if has_tool_calls:
+        timeout = 60.0  # 工具调用强制60秒超时
+        logger.info("Using extended 60s timeout for tool calls in traditional streaming")
+    elif is_fast_failover:
+        timeout = 60.0  # 快速响应模式使用60秒超时
+        logger.info("Using extended 60s timeout for fast response mode in traditional streaming")
+    else:
+        timeout = float(db.get_config('request_timeout', '60'))
+    
     max_retries = int(db.get_config('max_retries', '3'))
 
     logger.info(f"Starting stream request to: {url}")
@@ -2396,7 +2492,7 @@ async def stream_gemini_response(
                                 f"Stream response had no content after processing {processed_lines} lines, falling back to non-stream")
                             try:
                                 fallback_response = await make_gemini_request_with_retry(
-                                    gemini_key, key_id, gemini_request, model_name, 1
+                                    gemini_key, key_id, gemini_request, model_name, 1, timeout=timeout
                                 )
 
                                 thoughts, content = extract_thoughts_and_content(fallback_response)
@@ -2945,9 +3041,17 @@ async def chat_completions(
         stream_mode_config = db.get_stream_mode_config()
         stream_mode = stream_mode_config.get('mode', 'auto')
         
+        # 检查是否有工具调用
+        has_tool_calls = bool(request.tools or request.tool_choice)
+        
         # 根据流式模式配置决定是否使用流式响应
         should_stream = request.stream  # 默认跟随用户请求
-        if stream_mode == 'stream':
+        
+        # 工具调用强制使用非流式模式
+        if has_tool_calls:
+            should_stream = False
+            logger.info("Tool calls detected, forcing non-streaming mode")
+        elif stream_mode == 'stream':
             should_stream = True  # 强制流式
         elif stream_mode == 'non_stream':
             should_stream = False  # 强制非流式
@@ -3268,21 +3372,40 @@ async def update_anti_detection_config(request: dict):
     """更新防检测配置"""
     try:
         enabled = request.get('enabled')
+        disable_for_tools = request.get('disable_for_tools')
+        token_threshold = request.get('token_threshold')
 
+        success_count = 0
+        
         if enabled is not None:
-            success = db.set_config('anti_detection_enabled', 'true' if enabled else 'false')
-
-            if success:
+            if db.set_config('anti_detection_enabled', 'true' if enabled else 'false'):
+                success_count += 1
                 logger.info(f"Anti-detection enabled: {enabled}")
-                return {
-                    "success": True,
-                    "message": f"Anti-detection {'enabled' if enabled else 'disabled'} successfully"
-                }
+        
+        if disable_for_tools is not None:
+            if db.set_config('anti_detection_disable_for_tools', 'true' if disable_for_tools else 'false'):
+                success_count += 1
+                logger.info(f"Anti-detection disable for tools: {disable_for_tools}")
+        
+        if token_threshold is not None:
+            if isinstance(token_threshold, (int, float)) and token_threshold >= 1000:
+                if db.set_config('anti_detection_token_threshold', str(int(token_threshold))):
+                    success_count += 1
+                    logger.info(f"Anti-detection token threshold: {token_threshold}")
             else:
-                raise HTTPException(status_code=500, detail="Failed to update anti-detection configuration")
-        else:
-            raise HTTPException(status_code=422, detail="Missing 'enabled' parameter")
+                raise HTTPException(status_code=422, detail="Token threshold must be a number >= 1000")
 
+        if success_count > 0:
+            return {
+                "success": True,
+                "message": "Anti-detection configuration updated successfully",
+                "updated_fields": success_count
+            }
+        else:
+            raise HTTPException(status_code=422, detail="No valid parameters provided")
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to update anti-detection config: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -3293,10 +3416,14 @@ async def get_anti_detection_config():
     """获取防检测配置"""
     try:
         enabled = db.get_config('anti_detection_enabled', 'true').lower() == 'true'
+        disable_for_tools = db.get_config('anti_detection_disable_for_tools', 'true').lower() == 'true'
+        token_threshold = int(db.get_config('anti_detection_token_threshold', '5000'))
 
         return {
             "success": True,
             "anti_detection_enabled": enabled,
+            "disable_for_tools": disable_for_tools,
+            "token_threshold": token_threshold,
             "statistics": anti_detection.get_statistics()
         }
     except Exception as e:
@@ -3326,7 +3453,7 @@ async def test_anti_detection():
 
         return {
             "success": True,
-            "test_results": results,
+            "results": results,  # 修改字段名以匹配前端期望
             "total_symbols_available": len(anti_detection.safe_symbols)
         }
 

@@ -2647,8 +2647,8 @@ elif page == "系统设置":
         st.stop()
 
     # 包含故障转移配置的标签页
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-        "思考模式", "提示词注入", "流式模式", "负载均衡", "故障转移", "自动清理", "系统信息"
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+        "思考模式", "提示词注入", "流式模式", "负载均衡", "故障转移", "自动清理", "系统信息", "防检测"
     ])
 
     with tab1:
@@ -3537,6 +3537,129 @@ elif page == "系统设置":
                 </div>
             </a>
             ''', unsafe_allow_html=True)
+
+    with tab8:
+        st.markdown("#### 防检测配置")
+        st.markdown("管理自动化检测防护功能，提升API调用的稳定性")
+
+        # 获取防检测配置
+        anti_detection_data = call_api('/admin/config/anti-detection', 'GET')
+        
+        if anti_detection_data:
+            anti_detection_config = anti_detection_data.get('config', {})
+            current_enabled = anti_detection_config.get('anti_detection_enabled', True)
+            current_disable_for_tools = anti_detection_config.get('disable_for_tools', True) 
+            current_token_threshold = anti_detection_config.get('token_threshold', 5000)
+            stats = anti_detection_data.get('statistics', {})
+            
+            # 状态概览卡片
+            status_text = "已启用" if current_enabled else "已禁用"
+            status_color = "#10b981" if current_enabled else "#ef4444"
+            
+            st.markdown(f'''
+            <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); 
+                        border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h5 style="margin: 0; color: #374151; font-size: 1.1rem;">防检测状态</h5>
+                        <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                            工具调用时: {"禁用" if current_disable_for_tools else "启用"} | 
+                            生效阈值: {current_token_threshold} tokens
+                        </p>
+                    </div>
+                    <div style="background: {status_color}; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500;">
+                        {status_text}
+                    </div>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+
+            with st.form("anti_detection_form"):
+                st.markdown("**基础配置**")
+                
+                col1, col2 = st.columns([1, 1])
+                
+                with col1:
+                    enabled = st.checkbox(
+                        "启用防检测功能",
+                        value=current_enabled,
+                        help="开启后将在合适的情况下自动应用防检测处理"
+                    )
+                    
+                with col2:
+                    disable_for_tools = st.checkbox(
+                        "工具调用时禁用防检测",
+                        value=current_disable_for_tools,
+                        help="在进行工具调用时自动禁用防检测，避免影响工具响应"
+                    )
+
+                st.markdown("**高级配置**")
+                token_threshold = st.number_input(
+                    "Token阈值",
+                    min_value=1000,
+                    max_value=50000,
+                    value=current_token_threshold,
+                    step=500,
+                    help="只有当消息token数超过此阈值时才应用防检测处理"
+                )
+
+                # 统计信息
+                if stats:
+                    st.markdown("**使用统计**")
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric(
+                            "处理次数",
+                            stats.get('processed_count', 0),
+                            help="累计应用防检测处理的次数"
+                        )
+                    
+                    with col2:
+                        st.metric(
+                            "符号注入次数", 
+                            stats.get('symbol_injections', 0),
+                            help="累计注入的防检测符号数量"
+                        )
+                    
+                    with col3:
+                        avg_time = stats.get('average_processing_time_ms', 0)
+                        st.metric(
+                            "平均处理时间",
+                            f"{avg_time:.1f}ms",
+                            help="平均防检测处理耗时"
+                        )
+
+                col1, col2 = st.columns([1, 1])
+                
+                with col1:
+                    if st.form_submit_button("保存配置", type="primary", use_container_width=True):
+                        update_data = {
+                            'enabled': enabled,
+                            'disable_for_tools': disable_for_tools,
+                            'token_threshold': token_threshold
+                        }
+                        
+                        result = call_api('/admin/config/anti-detection', 'POST', data=update_data)
+                        if result and result.get('success'):
+                            st.success("防检测配置已更新")
+                            clear_cache()
+                            st.rerun()
+                        else:
+                            st.error("更新防检测配置失败")
+                
+                with col2:
+                    if st.form_submit_button("测试防检测", use_container_width=True):
+                        test_result = call_api('/admin/test/anti-detection', 'POST')
+                        if test_result and test_result.get('success'):
+                            st.success("防检测功能测试成功")
+                            with st.expander("测试结果详情"):
+                                st.json(test_result)
+                        else:
+                            st.error("防检测功能测试失败")
+
+        else:
+            st.error("无法获取防检测配置数据")
 
 # --- 页脚 ---
 st.markdown(
