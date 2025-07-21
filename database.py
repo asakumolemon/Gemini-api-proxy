@@ -286,6 +286,7 @@ class Database:
         default_models = [
             ('gemini-2.5-flash', 10, 250000, 250),  # 单API: RPM, TPM, RPD
             ('gemini-2.5-pro', 5, 250000, 100),  # 单API: RPM, TPM, RPD
+            ('gemini-2.0-flash-exp', 5, 250000, 100),
         ]
 
         for model_name, rpm, tpm, rpd in default_models:
